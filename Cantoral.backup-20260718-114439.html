@@ -3,25 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Cantoral — Parroquia San Juan Bautista, Urda</title>
-<meta name="description" content="Cancionero litúrgico con acordes — Parroquia San Juan Bautista, Urda">
-<meta name="theme-color" content="#8B1A1A">
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Cantoral">
-<script>
-  // Registro del Service Worker: guarda todo en el dispositivo para funcionar SIN internet.
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function () {
-      navigator.serviceWorker.register('service-worker.js').catch(function (e) { console.warn('SW no registrado:', e); });
-    });
-  }
-</script>
-<script src="./support.js?v=2"></script>
+<script src="./support.js"></script>
 </head>
 <body>
 <x-dc>
@@ -32,31 +14,14 @@
 [data-scroll]{-webkit-overflow-scrolling:touch;}
 [data-page]{flex-shrink:0;}
 
-/* ── Barra de herramientas: ocultar scrollbar y adaptarse en pantallas pequeñas ── */
-[data-toolbar]{scrollbar-width:none;}
-[data-toolbar]::-webkit-scrollbar{display:none;}
-@media (max-width:640px){
-  [data-toolbar]{flex-wrap:wrap!important;justify-content:center!important;overflow-x:visible!important;padding:5px 58px 6px 8px!important;row-gap:5px!important;}
-}
-@media (max-width:380px){
-  [data-toolbar] span[data-tb-label]{display:none!important;}
-}
-
-/* ── Accesibilidad: foco visible y objetivos táctiles cómodos ── */
-button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid #3E5C76;outline-offset:2px;border-radius:5px;}
-@media (pointer:coarse){
-  [data-toolbar] button{min-height:32px;}
-}
-@media print{
-  [data-toolbar],[data-toggle]{display:none!important;}
-}
 </style>
 <meta name="ext-resource-dependency" content="assets/portada-w.jpg" data-resource-id="portadaPng" />
 <meta name="ext-resource-dependency" content="assets/papel-w.jpg" data-resource-id="papelPng" />
 <meta name="ext-resource-dependency" content="assets/escudo-w.png" data-resource-id="escudoPng" />
 <meta name="ext-resource-dependency" content="assets/eb-garamond.woff2" data-resource-id="ebGaramondFont" />
 <meta name="ext-resource-dependency" content="assets/playfair-display.woff2" data-resource-id="playfairFont" />
-<link href="assets/fonts.css?v=2" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Amaranth:ital,wght@0,400;0,700;1,400;1,700&family=EB+Garamond:ital,wght@0,400;0,700;1,400;1,700&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
 </helmet>
 <template id="__bundler_thumbnail" data-bg-color="#8B1A1A">
   <svg viewBox="0 0 120 80" xmlns="http://www.w3.org/2000/svg">
@@ -72,18 +37,18 @@ button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid 
     <div data-toolbar style="flex:0 0 auto;color:#fff;display:flex;flex-wrap:nowrap;align-items:center;justify-content:center;gap:4px 6px;padding:5px 46px 5px 10px;background:var(--ct-bg-toolbar,#8B1A1A);overflow-x:auto;">
 
       <div style="display:inline-flex;align-items:center;gap:3px;background:rgba(0,0,0,.22);border-radius:7px;padding:2px 7px;flex-shrink:0;">
-        <span data-tb-label="1" style="font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#fff;margin-right:1px;white-space:nowrap;">Cifrado</span>
+        <span style="font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#fff;margin-right:1px;white-space:nowrap;">Cifrado</span>
         <button onClick="{{ setAnglo }}" style="{{ stAnglo }}">C</button>
         <button onClick="{{ setLatino }}" style="{{ stLatino }}">Do</button>
       </div>
       <div style="display:inline-flex;align-items:center;gap:3px;background:rgba(0,0,0,.22);border-radius:7px;padding:2px 7px;flex-shrink:0;">
-        <span data-tb-label="1" style="font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#fff;margin-right:1px;white-space:nowrap;">Apariencia</span>
+        <span style="font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#fff;margin-right:1px;white-space:nowrap;">Apariencia</span>
         <button onClick="{{ setLight }}" style="{{ stLight }}">Claro</button>
         <button onClick="{{ setAuto }}" style="{{ stAuto }}">Auto</button>
         <button onClick="{{ setDark }}" style="{{ stDark }}">Oscuro</button>
       </div>
       <div style="display:inline-flex;align-items:center;gap:3px;background:rgba(0,0,0,.22);border-radius:7px;padding:2px 7px;flex-shrink:0;">
-        <span data-tb-label="1" style="font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#fff;margin-right:1px;white-space:nowrap;">Visualización</span>
+        <span style="font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#fff;margin-right:1px;white-space:nowrap;">Visualización</span>
         <button onClick="{{ showChords }}" style="{{ stShowChords }}">Acordes</button>
         <button onClick="{{ hideChords }}" style="{{ stHideChords }}">Solo letra</button>
       </div>
@@ -1984,7 +1949,7 @@ class Component extends DCLogic {
     // Chord-only line (intro/outro marker): render compactly
     const isChordOnly=segsRaw.every(s=>!(s[1]||'').trim());
     if(isChordOnly){
-      return R('div',{key,style:{color:hideChords?'transparent':rojo,fontWeight:700,fontSize:'0.72em',letterSpacing:'0.04em',marginBottom:'0.4em',whiteSpace:'nowrap'}},
+      return R('div',{key,style:{color:hideChords?'transparent':rojo,fontWeight:700,fontSize:'0.82em',letterSpacing:'0.04em',marginBottom:'0.4em',whiteSpace:'nowrap'}},
         segsRaw.filter(s=>s[0]).map((s,i)=>R('span',{key:i,style:{marginRight:'0.5em'}},this.trans(s[0])))
       );
     }
@@ -2008,7 +1973,7 @@ class Component extends DCLogic {
         const chord=s[0]?this.trans(s[0]):null;
         const lyric=(String(s[1])||'').replace(/ +$/,m=>'\u00A0'.repeat(m.length))||'\u00A0';
         return R('span',{key:i,style:{display:'inline-flex',flexDirection:'column',alignItems:'flex-start',verticalAlign:'bottom',whiteSpace:'nowrap'}},
-          visHasChord?R('span',{style:{color:chord?rojo:'transparent',fontWeight:700,fontSize:'0.72em',lineHeight:'1.15',whiteSpace:'nowrap',minHeight:'1em'}},chord||'\u00A0'):null,
+          visHasChord?R('span',{style:{color:chord?rojo:'transparent',fontWeight:700,fontSize:'0.82em',lineHeight:'1.15',whiteSpace:'nowrap',minHeight:'1em'}},chord||'\u00A0'):null,
           R('span',{style:{fontWeight:'normal',lineHeight:'1.45',letterSpacing:'0.02em',whiteSpace:'nowrap'}},lyric)
         );
       });
@@ -2020,13 +1985,9 @@ class Component extends DCLogic {
       let lyric=(String(s[1])||'').replace(/ +$/,m=>'\u00A0'.repeat(m.length))||'\u00A0';
       const isHidden=lyric.startsWith('>>');
       if(isHidden) lyric=lyric.slice(2)||'\u00A0';
-      const nextChord=!!(segs[i+1]&&segs[i+1][0]);
-      // Columna sílaba: acorde (0.72em, estrecho) sobre la letra; ancho = máx(acorde,letra)
-      // para que los acordes NUNCA se pisen. Si la sílaba siguiente lleva acorde, se
-      // reserva un hueco mínimo (paddingRight) para que dos acordes no se lean como uno
-      // ("A7" + "D" nunca "A7D"). Sin guiones ni relleno a mitad de palabra.
+      // inline-flex column: chord row on top, lyric below — width = max(chord,lyric), no overflow
       return R('span',{key:i,style:{display:'inline-flex',flexDirection:'column',alignItems:'flex-start',verticalAlign:'bottom',whiteSpace:'nowrap'}},
-        hasAnyChord?R('span',{style:{color:isHidden||hideChords?'transparent':(chord?rojo:'transparent'),fontWeight:700,fontSize:'0.72em',lineHeight:'1.15',whiteSpace:'nowrap',minHeight:'1em',paddingRight:nextChord?'0.5em':undefined}},chord||'\u00A0'):null,
+        hasAnyChord?R('span',{style:{color:isHidden||hideChords?'transparent':(chord?rojo:'transparent'),fontWeight:700,fontSize:'0.82em',lineHeight:'1.15',whiteSpace:'nowrap',minHeight:'1em'}},chord||'\u00A0'):null,
         R('span',{style:{fontWeight:isChorus?700:'normal',lineHeight:'1.45',letterSpacing:'0.02em',whiteSpace:'nowrap',color:isHidden?'transparent':undefined}},lyric)
       );
     });
@@ -2069,13 +2030,25 @@ class Component extends DCLogic {
       const deficit=Math.ceil(chordW-lyricW);
       if(deficit<=0) continue;
       const lv=vis(lyric);
-      // Solo se a\u00F1ade separaci\u00F3n cuando la s\u00EDlaba termina en L\u00CDMITE DE PALABRA
-      // (espacio/puntuaci\u00F3n): as\u00ED los acordes anchos no se pisan entre palabras.
-      // A mitad de palabra NO se parte ni se a\u00F1ade hueco: las s\u00EDlabas siguen juntas
-      // (p.ej. "cara" con acordes en "ca" y "ra" se lee "cara", no "ca-ra"/"ca ra").
+      // Check if lyric ends at a word boundary
       const atBoundary=/[\s,.\-!?;:]$/.test(lv)||!lv.trim();
       if(atBoundary){
+        // Add NBSP at the end (inter-word space)
         out[i][1]=lyric+'\u00A0'.repeat(deficit);
+      } else {
+        // Mid-word: try to hyphenate
+        const splitIdx=this._findSyllableSplit(lv.trimEnd());
+        if(splitIdx>0&&splitIdx<lv.trimEnd().length){
+          const w=lv.trimEnd();
+          const before=w.slice(0,splitIdx)+'-';
+          const moved=w.slice(splitIdx);
+          out[i][1]=before;
+          if(i+1<out.length){
+            out[i+1][1]=moved+out[i+1][1];
+          }
+        } else {
+          out[i][1]=lyric+'\u00A0'.repeat(deficit);
+        }
       }
     }
     return out;
@@ -2282,9 +2255,6 @@ class Component extends DCLogic {
 
   renderIndex(sections){
     const R=React.createElement,{rojo,negro,bg}=this.pal();
-    const L=this._L||this._computeLayout();
-    const idxTitleFs=Math.round(Math.max(30,Math.min(48,L.pageW*0.06)));
-    const idxEntryFs=Math.round(Math.max(15,Math.min(20,L.pageW*0.024)));
     const splitAfter=sections.findIndex(s=>s.name==='Cordero de Dios');
     const half=splitAfter>=0?splitAfter+1:Math.ceil(sections.length/2);
     const page1secs=sections.slice(0,half);
@@ -2294,9 +2264,9 @@ class Component extends DCLogic {
       sec.songs.map((s,j)=>R('a',{key:j,onClick:(e)=>{e.preventDefault();this.goTo(s.id);},style:entryStyle},
         R('span',{},s.title),R('span',{style:{color:rojo,fontWeight:700}},String(s.sectionPage||''))))
     ));
-    const pageStyle={overflowY:'auto',background:bg,display:'flex',flexDirection:'column',padding:(L.padY+8)+'px '+L.padX+'px'};
-    const title=(t)=>R('div',{style:{fontFamily:"'Playfair Display',serif",fontStyle:'italic',fontSize:idxTitleFs+'px',color:negro,textAlign:'center',marginBottom:'0.4em'}},t);
-    const entryStyle={display:'flex',justifyContent:'space-between',gap:'12px',textDecoration:'none',color:negro,padding:'0.35em 0.1em',borderBottom:'1px dotted rgba(0,0,0,.16)',cursor:'pointer',fontSize:idxEntryFs+'px'};
+    const pageStyle={overflowY:'auto',background:bg,display:'flex',flexDirection:'column',padding:'40px 68px'};
+    const title=(t)=>R('div',{style:{fontFamily:"'Playfair Display',serif",fontStyle:'italic',fontSize:'48px',color:negro,textAlign:'center',marginBottom:'0.4em'}},t);
+    const entryStyle={display:'flex',justifyContent:'space-between',gap:'12px',textDecoration:'none',color:negro,padding:'0.35em 0.1em',borderBottom:'1px dotted rgba(0,0,0,.16)',cursor:'pointer',fontSize:'20px'};
     return [
       R('section',{key:'indice-1',id:'indice','data-page':'1',style:pageStyle},
         title('\u00CDndice'),
@@ -2312,40 +2282,33 @@ class Component extends DCLogic {
   renderSection(name,subtitle,key){
     const {negro,bg}=this.pal();
     const R=React.createElement;
-    const L=this._L||this._computeLayout();
     const words=name.split(' ');
     const maxLen=Math.max(...words.map(w=>w.length));
-    // Tamaño del título: limitado por el ancho de la palabra más larga Y el alto real
-    // de la página. Playfair 900: ~0.62em/carácter; lineHeight renderizado: 1.25
-    const bottomBand=Math.round(L.pageH*0.20);        // banda inferior (parroquia + escudo)
-    const sidePad=Math.round(L.pageW*0.07);
-    const byWidth=Math.min(200, Math.floor((L.pageW-sidePad*2)/(maxLen*0.62)));
-    const subFs=Math.round(Math.min(72, L.pageW*0.09));
-    const availH=L.pageH-bottomBand-Math.round(L.pageH*0.08);
-    const subH=subtitle?(subFs*1.15+subFs*0.55):0;
+    // font size: limitado por ancho de la palabra más larga Y altura total real
+    // Playfair 900: ~0.62em por carácter; lineHeight renderizado: 1.25
+    const byWidth=Math.min(200, Math.floor(682/(maxLen*0.62)));
+    const availH=1123-290-80;                      // zona título menos padding
+    const subH=subtitle?(72*1.15+40):0;            // alto del subtítulo + margen
     const byHeight=Math.floor((availH-subH)/(words.length*1.25));
-    const fs=Math.max(24, Math.min(byWidth, byHeight));
-    const footFs=Math.round(Math.max(14,Math.min(22, L.pageW*0.028)));
-    const escW=Math.round(Math.max(44,Math.min(64, L.pageW*0.08)));
-    return R('section',{key,'data-page':'1',style:{height:'100%',width:'100%',flexShrink:0,scrollSnapAlign:'start',overflow:'hidden',position:'relative',background:'#F5F0E8'}},
+    const fs=Math.max(40, Math.min(byWidth, byHeight));
+    return R('section',{key,'data-page':'1',style:{height:'1123px',width:'794px',flexShrink:0,scrollSnapAlign:'start',overflow:'hidden',position:'relative',background:'#F5F0E8'}},
       R('div',{style:{position:'absolute',inset:0,backgroundImage:"url('"+(window.__resources&&window.__resources.papelPng||'assets/papel-w.jpg')+"')",backgroundSize:'cover',backgroundPosition:'center',mixBlendMode:'multiply',zIndex:0}}),
-      R('div',{style:{position:'absolute',top:0,left:0,right:0,bottom:bottomBand+'px',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',zIndex:1,padding:'0 '+sidePad+'px',textAlign:'center'}},
+      R('div',{style:{position:'absolute',top:0,left:0,right:0,bottom:'290px',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',zIndex:1,padding:'0 56px',textAlign:'center'}},
         ...words.map((w,i)=>R('div',{key:i,style:{fontFamily:"'Playfair Display',serif",fontWeight:900,fontSize:fs+'px',color:'#000',lineHeight:1.25,letterSpacing:'-2px',textAlign:'center',whiteSpace:'nowrap',hyphens:'none'}},(w))),
-        subtitle?R('div',{style:{fontFamily:"'Playfair Display',serif",fontStyle:'italic',fontWeight:700,fontSize:subFs+'px',color:'#000',lineHeight:1.1,textAlign:'center',marginTop:'0.55em',letterSpacing:'-1px'}},subtitle):null
+        subtitle?R('div',{style:{fontFamily:"'Playfair Display',serif",fontStyle:'italic',fontWeight:700,fontSize:'72px',color:'#000',lineHeight:1.1,textAlign:'center',marginTop:'40px',letterSpacing:'-1px'}},subtitle):null
       ),
-      R('div',{style:{position:'absolute',bottom:Math.round(L.pageH*0.05)+'px',left:0,right:0,textAlign:'center',zIndex:1}},
-        R('div',{style:{fontFamily:"'EB Garamond',serif",fontStyle:'italic',fontSize:footFs+'px',color:'#1a1a1a',lineHeight:1.9}},'Parroquia'),
-        R('div',{style:{fontFamily:"'EB Garamond',serif",fontStyle:'italic',fontSize:footFs+'px',color:'#1a1a1a',lineHeight:1.9}},'San Juan Bautista'),
-        R('div',{style:{fontFamily:"'EB Garamond',serif",fontStyle:'italic',fontSize:footFs+'px',color:'#1a1a1a',lineHeight:1.9}},'Urda'),
-        R('img',{src:window.__resources&&window.__resources.escudoPng||'assets/escudo-w.png',alt:'',style:{width:escW+'px',marginTop:'10px'}})
+      R('div',{style:{position:'absolute',bottom:'56px',left:0,right:0,textAlign:'center',zIndex:1}},
+        R('div',{style:{fontFamily:"'EB Garamond',serif",fontStyle:'italic',fontSize:'22px',color:'#1a1a1a',lineHeight:1.9}},'Parroquia'),
+        R('div',{style:{fontFamily:"'EB Garamond',serif",fontStyle:'italic',fontSize:'22px',color:'#1a1a1a',lineHeight:1.9}},'San Juan Bautista'),
+        R('div',{style:{fontFamily:"'EB Garamond',serif",fontStyle:'italic',fontSize:'22px',color:'#1a1a1a',lineHeight:1.9}},'Urda'),
+        R('img',{src:window.__resources&&window.__resources.escudoPng||'assets/escudo-w.png',alt:'',style:{width:'64px',marginTop:'10px'}})
       )
     );
   }
 
   renderSong(song){
     const R=React.createElement,{rojo,negro,gris,bg}=this.pal();
-    const L=this._L||this._computeLayout();
-    const pad=L.padY+'px '+L.padX+'px';
+    const pad='22px 52px';
     const hideChords=this.state.chordsHidden;
     const personalCapo=(this.state.personalCapos[song.id]!==undefined&&this.state.personalCapos[song.id]!==null)?this.state.personalCapos[song.id]:0;
     const setPersonalCapo=(n)=>{
@@ -2371,7 +2334,7 @@ class Component extends DCLogic {
     );
     const ytUrl=song.youtube||this.youtubeLinks()[song.id]||'';
     const titleRow=R('div',{style:{display:'flex',alignItems:'center',justifyContent:'center',gap:'10px',marginTop:'10px',marginBottom:'18px',flexWrap:'wrap',flex:'0 0 auto'}},
-      R('div',{style:{fontFamily:"'Amaranth',sans-serif",fontStyle:'italic',fontWeight:700,fontSize:L.titleFs+'px',color:rojo,textAlign:'center',lineHeight:1.05}},song.title),
+      R('div',{style:{fontFamily:"'Amaranth',sans-serif",fontStyle:'italic',fontWeight:700,fontSize:'42px',color:rojo,textAlign:'center',lineHeight:1.05}},song.title),
       this.ytIcon(song,ytUrl)
     );
 
@@ -2407,43 +2370,41 @@ class Component extends DCLogic {
     );
 
     const _blocks=song.blocks;
-    // En pantallas estrechas (móvil) forzamos 1 columna: dos columnas obligarían a una
-    // fuente diminuta o recortarían las líneas. En tablet/escritorio se respeta el diseño.
-    const _singleCol=song.columns===1||_blocks.length<=1||(L.pageW<600);
+    const _singleCol=song.columns===1||_blocks.length<=1;
     let colEl;
     if(_singleCol){
-      colEl=R('div',{style:{flex:'1 1 0',minWidth:0,overflow:'visible'}},_blocks.map((b,i)=>this.renderBlock(b,'b'+i,hideChords)));
+      colEl=R('div',{style:{flex:'1 1 0',minWidth:0,overflow:'hidden'}},_blocks.map((b,i)=>this.renderBlock(b,'b'+i,hideChords)));
     } else {
       const _split=this.bestColSplit(_blocks);
       const _left=_blocks.slice(0,_split),_right=_blocks.slice(_split);
       colEl=R(React.Fragment,null,
-        R('div',{style:{flex:'1 1 0',minWidth:0,overflow:'visible'}},_left.map((b,i)=>this.renderBlock(b,'b'+i,hideChords))),
-        R('div',{style:{flex:'1 1 0',minWidth:0,overflow:'visible'}},_right.map((b,i)=>this.renderBlock(b,'br'+i,hideChords)))
+        R('div',{style:{flex:'1 1 0',minWidth:0,overflow:'hidden'}},_left.map((b,i)=>this.renderBlock(b,'b'+i,hideChords))),
+        R('div',{style:{flex:'1 1 0',minWidth:0,overflow:'hidden'}},_right.map((b,i)=>this.renderBlock(b,'br'+i,hideChords)))
       );
     }
     const _perSongScale=this.state.songScales[song.id]||1;
     const _globalScale=this.state.scale||1;
     // Tamaño de letra 100% analítico (no lee el DOM): rápido y sin reflows.
     let fittedFs=24;
-    // scaleBoost va DENTRO del estimador (como parte de songScale) para que quede sujeto
-    // al tope de ancho: nunca puede empujar una línea fuera de la página.
-    try{fittedFs=this.estimateFontSize(_blocks,!_singleCol,_perSongScale*_globalScale*(song.scaleBoost||1));}catch(e){console.error('estimateFontSize error',e,song.id);}
-    const cols=R('div',{'data-cols':'1',style:{width:'100%',flex:'0 0 auto',minHeight:0,display:'flex',flexDirection:'row',justifyContent:'space-between',gap:L.gap+'px',position:'relative',zIndex:1,overflow:'visible',fontSize:(fittedFs||24)+'px'}},colEl);
+    try{fittedFs=this.estimateFontSize(_blocks,!_singleCol,_perSongScale*_globalScale);}catch(e){console.error('estimateFontSize error',e,song.id);}
+    if(song.scaleBoost) fittedFs=Math.round(fittedFs*song.scaleBoost);
+    const cols=R('div',{'data-cols':'1',style:{width:'100%',flex:'1 1 auto',minHeight:0,display:'flex',flexDirection:'row',justifyContent:'space-between',gap:'28px',position:'relative',zIndex:1,overflow:'visible',fontSize:(fittedFs||24)+'px'}},colEl);
 
-    const bodyWrap=R('div',{'data-bodywrap':'1',style:{flex:'1 1 auto',minHeight:0,display:'flex',flexDirection:'column',alignItems:'stretch',overflowY:'auto',overflowX:'hidden'}},
+    const bodyWrap=R('div',{'data-bodywrap':'1',style:{flex:'1 1 auto',minHeight:0,display:'flex',flexDirection:'column',alignItems:'stretch',overflowY:'auto'}},
       capoRow, cols
     );
 
-    const footer=R('div',{style:{position:'absolute',bottom:'18px',left:0,right:0,fontSize:'13px',color:gris,borderTop:'1px solid rgba(139,26,26,.12)',padding:'6px '+(L.padX+16)+'px 0',zIndex:2,display:'flex',alignItems:'baseline',justifyContent:'space-between',gap:'14px'}},
-      song.artist?R('span',{style:{fontSize:'12px',fontStyle:'italic',letterSpacing:'.3px',color:gris,minWidth:0,flex:'1 1 auto',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},'Origen: '+song.artist):R('span',{style:{flex:'1 1 auto'}}),
-      R('span',{style:{flexShrink:0,fontWeight:700}},String(song.sectionPage||''))
+    const footer=R('div',{style:{position:'absolute',bottom:'18px',left:0,right:0,fontSize:'13px',color:gris,borderTop:'1px solid rgba(139,26,26,.12)',padding:'6px 68px 0',zIndex:2,display:'grid',gridTemplateColumns:'1fr auto 1fr',alignItems:'baseline'}},
+      song.artist?R('span',{style:{justifySelf:'start',fontSize:'12px',fontStyle:'italic',letterSpacing:'.3px',color:gris,maxWidth:'100%',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},'Origen: '+song.artist):R('span',{}),
+      R('span',{style:{justifySelf:'center'}},String(song.sectionPage||'')),
+      R('span',{})
     );
     const wm=R('img',{src:window.__resources&&window.__resources.escudoPng||'assets/escudo-w.png',alt:'',style:{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',width:'100%',height:'100%',objectFit:'contain',opacity:.06,pointerEvents:'none',zIndex:0}});
 
     return R('section',{key:'song-'+song.id+(song.keySuffix||''),id:song.id,'data-song-id':song.id,'data-page':'1','data-songpage':'1',style:{overflow:'hidden',position:'relative',background:'#F5F0E8',display:'flex',flexDirection:'column',alignItems:'center'}},
       wm,
       footer,
-      R('div',{style:{position:'relative',zIndex:1,flex:'1 1 auto',minHeight:0,display:'flex',flexDirection:'column',width:'100%',padding:L.padY+'px '+L.padX+'px 58px'}},
+      R('div',{style:{position:'relative',zIndex:1,flex:'1 1 auto',minHeight:0,display:'flex',flexDirection:'column',width:'100%',padding:pad,paddingBottom:'52px'}},
 
         topbar,titleRow,bodyWrap
       )
@@ -2470,7 +2431,8 @@ class Component extends DCLogic {
     const id=p.id||null, songId=p['data-song-id']||null;
     const inner=React.cloneElement(node,{
       'data-page':null, id:null, 'data-song-id':null,
-      style:{...(p.style||{}),width:'var(--page-w,794px)',height:'var(--page-h,1123px)',margin:0,flexShrink:0}
+      style:{...(p.style||{}),width:'794px',height:'1123px',margin:0,flexShrink:0,
+        transform:'scale(var(--page-zoom,1))',transformOrigin:'top left'}
     });
     const w={key:(node.key||'p')+'-w','data-page':'1',style:{
       width:'var(--page-w,794px)',height:'var(--page-h,1123px)',margin:'0 auto 14px',
@@ -2484,15 +2446,13 @@ class Component extends DCLogic {
   applyPageScale(){
     const c=document.querySelector('[data-scroll]');
     if(!c) return;
-    // Única responsabilidad: escribir las CSS vars del tamaño de página (sin reflows caros).
-    // Cada página LLENA el viewport real; el tamaño de letra se calcula analíticamente
-    // en renderSong -> estimateFontSize a partir de este mismo layout.
+    // Única responsabilidad: calcular escala y escribir CSS vars (sin reflows caros).
     this._scrollTop={};
-    const L=this._computeLayout();
-    const scaledW=L.pageW;
-    const scaledH=L.pageH;
+    const scale=Math.min(c.clientHeight/1123,c.clientWidth/794);
+    const scaledW=Math.round(794*scale);
+    const scaledH=Math.round(1123*scale);
     const rs=document.documentElement.style;
-    rs.setProperty('--page-zoom','1');
+    rs.setProperty('--page-zoom',String(scale));   // transform:scale() en el interior
     rs.setProperty('--page-w',scaledW+'px');        // tamaño real del contenedor de página
     rs.setProperty('--page-h',scaledH+'px');
     const sidePad=Math.max(8,Math.floor((c.clientWidth-scaledW)/2));
@@ -2504,63 +2464,16 @@ class Component extends DCLogic {
     const step=scaledH+14;
     let cum=0;
     document.querySelectorAll('[data-scroll] > [data-page]').forEach(p=>{ if(p.id) this._scrollTop[p.id]=cum; cum+=step; });
-    // El tamaño de letra se estima analíticamente en estimateFontSize y se corrige
-    // de forma MEDIDA aquí para garantizar que ninguna línea se recorte.
-    this._correctVisibleFits();
-  }
-
-  // Programa el ajuste de layout coalescido en un frame, con FALLBACK garantizado
-  // por setTimeout: en webviews o pestañas en segundo plano requestAnimationFrame
-  // puede no dispararse nunca, y sin este fallback las CSS vars de tamaño de página
-  // no se fijaban (las páginas quedaban al fallback de 794px → desborde en móvil).
-  // Corrección MEDIDA (exacta) del tamaño de letra: tras el layout, para cada canto
-  // cercano al viewport, mide el desbordamiento horizontal REAL de sus columnas y
-  // reduce la fuente lo justo para que NINGUNA línea se recorte. El estimador analítico
-  // (estimateFontSize) da el valor inicial; esto lo corrige donde el modelo no llega
-  // (segunda voz con sangría, líneas solo-acordes, negrita de estribillos, etc.).
-  // Solo toca páginas próximas → sin coste perceptible ni cuelgues.
-  // Corrige UNA página: mide el desbordamiento horizontal real de sus columnas y reduce
-  // la fuente lo justo para que ninguna línea se salga. Idempotente.
-  _correctPage(w){
-    if(!w) return;
-    const cols=w.querySelector('[data-cols]'); if(!cols) return;
-    let ratio=1;
-    for(const col of cols.children){ if(col.scrollWidth>col.clientWidth+1) ratio=Math.min(ratio, col.clientWidth/col.scrollWidth); }
-    if(ratio<0.999){
-      const cur=parseFloat(cols.style.fontSize)||parseFloat(getComputedStyle(cols).fontSize)||24;
-      const nf=Math.max(9, Math.floor(cur*ratio));
-      if(Math.abs(nf-cur)>=1) cols.style.fontSize=nf+'px';
-    }
-  }
-  _correctVisibleFits(){
-    const c=document.querySelector('[data-scroll]'); if(!c) return;
-    const top=c.scrollTop, vh=c.clientHeight;
-    const step=(this._L?this._L.pageH:1123)+14;
-    c.querySelectorAll(':scope > [data-page]').forEach(w=>{
-      const oTop=w.offsetTop;
-      if(oTop+step < top-step*1.5 || oTop > top+vh+step*1.5) return; // solo páginas próximas
-      this._correctPage(w);
-    });
-  }
-  // IntersectionObserver: corrige cada canto EXACTAMENTE cuando aparece (por scroll,
-  // índice o celebración), tras el layout. Es la garantía última de que nada se sale.
-  _observePages(){
-    try{
-      const root=document.querySelector('[data-scroll]'); if(!root) return;
-      if(!this._io){
-        this._io=new IntersectionObserver((entries)=>{ entries.forEach(e=>{ if(e.isIntersecting) this._correctPage(e.target); }); },{root,rootMargin:'500px 0px',threshold:0});
-      }
-      this._io.disconnect();
-      root.querySelectorAll(':scope > [data-page]').forEach(p=>this._io.observe(p));
-    }catch(_){}
+    // NOTA: el tamaño de letra de cada canto se calcula de forma ANALÍTICA en
+    // renderSong -> estimateFontSize (sin tocar el DOM).
+    // Las páginas se escalan con transform:scale() (compositor, coste casi nulo)
+    // en vez de la propiedad `zoom`, que forzaba un relayout gigante al entrar
+    // cada página escalada en pantalla y colgaba el móvil >10 s.
   }
 
   scheduleFit(){
-    if(this._fitScheduled) return;
-    this._fitScheduled=true;
-    const run=()=>{ if(!this._fitScheduled) return; this._fitScheduled=false; this.applyPageScale(); };
-    if(typeof requestAnimationFrame==='function') requestAnimationFrame(run);
-    this._fitTimer=setTimeout(run,60);
+    if(this._raf) cancelAnimationFrame(this._raf);
+    this._raf=requestAnimationFrame(()=>{ this._raf=null; this.applyPageScale(); });
   }
 
   // ── Helpers de columnas ───────────────────────────────────────
@@ -2594,75 +2507,10 @@ class Component extends DCLogic {
     return bestSplit;
   }
 
-  // ── Layout responsive ──────────────────────────────────────────
-  // Calcula, UNA vez por render, las dimensiones reales del área de página a
-  // partir del contenedor de scroll. Cada página llena el viewport (sin A4 fijo).
-  _computeLayout(){
-    const sc=document.querySelector('[data-scroll]');
-    const vw=(sc&&sc.clientWidth)?sc.clientWidth:(window.innerWidth||794);
-    const vh=(sc&&sc.clientHeight)?sc.clientHeight:(window.innerHeight||1123);
-    // En pantallas grandes limitamos el ancho para conservar el aspecto de "libro".
-    const pageW=Math.min(vw,980);
-    const pageH=Math.max(320,vh);
-    const padX=Math.max(14,Math.min(60,Math.round(pageW*0.055)));
-    const padY=Math.max(12,Math.min(40,Math.round(pageH*0.022)));
-    const titleFs=Math.round(Math.max(22,Math.min(48,pageW*0.056)));
-    const gap=pageW<560?16:28;
-    // Altura ocupada por el "cromo" de la página (encabezado + título + cejilla + pie).
-    const chromeH=padY+58/*paddingBottom del pie*/+18/*topbar*/+Math.round(titleFs*1.1)+28/*título*/+54/*cejilla/tono*/+10/*margen*/;
-    const availH=Math.max(140,pageH-chromeH);
-    const availW=pageW-padX*2;
-    this._L={vw,vh,pageW,pageH,padX,padY,titleFs,gap,availH,availW};
-    return this._L;
-  }
-  // Ancho de una cadena en "em" (px por 1px de fuente) usando canvas: NO fuerza reflow.
-  _measEm(text){
-    let ctx=this._measCtx;
-    if(!ctx){ const c=document.createElement('canvas'); ctx=c.getContext('2d'); ctx.font="1px 'EB Garamond',Georgia,serif"; this._measCtx=ctx; }
-    return ctx.measureText(text||'').width;
-  }
-  // Ancho real de una línea (en em). Cada sílaba se renderiza como columna
-  // acorde-sobre-letra, así que su ancho es el MÁXIMO entre el acorde (0.82em, negrita)
-  // y la letra. Sumando por sílaba se obtiene el ancho real, incluyendo el relleno de
-  // alineación de acordes (que ensancha las líneas y provocaba recortes horizontales).
-  _lineWidthEm(line){
-    const CH=0.72*1.06; // factor de ancho del acorde (0.72em + ~6% de negrita)
-    const isChordOnly=line.every(s=>!(String(s[1]||'')).trim());
-    if(isChordOnly){
-      let w=0;
-      for(const s of line){ if(s[0]) w+=this._measEm(this.trans(s[0]))*CH+0.5; } // acordes separados 0.5em
-      return w;
-    }
-    let w=0;
-    // Segunda voz (>>): sangría inicial
-    if(line[0] && String(line[0][1]||'').startsWith('>>')){
-      const raw=String(line[0][1]).slice(2);
-      const m=raw.match(/^(\d+(?:\.\d+)?)ch/);
-      w += m?parseFloat(m[1])*0.5:Math.round(raw.replace(/ /g,' ').replace(/\s+$/,'').length*0.72)*0.5;
-    }
-    for(let i=0;i<line.length;i++){
-      const seg=line[i];
-      const chord=seg[0]?this.trans(seg[0]):'';
-      let lyric=String(seg[1]||'').replace(/ /g,' ');
-      if(lyric.startsWith('>>')) lyric=lyric.slice(2);
-      const nextChord=!!(line[i+1]&&line[i+1][0]);
-      const chordW=chord?(this._measEm(chord)*CH + (nextChord?0.5*0.72:0)):0; // + hueco entre acordes
-      const lyricW=this._measEm(lyric);
-      w+=Math.max(chordW,lyricW);
-    }
-    return w;
-  }
-  _maxLineEm(blocks){
-    let max=0;
-    for(const b of blocks){ for(const line of b.lines){ const w=this._lineWidthEm(line); if(w>max) max=w; } }
-    return max;
-  }
-
-  // Tamaño de fuente óptimo: el MAYOR que cabe a la vez en ALTO y en ANCHO del área
-  // real disponible (por columna), sin recortes ni scroll innecesario.
+  // Tamaño de fuente estimado por altura (la corrección horizontal se hace en applyPageScale)
   estimateFontSize(blocks, isDouble, songScale){
-    const L=this._L||this._computeLayout();
-    // ── Restricción por ALTURA ──
+    const scale=this._vpScale||1;
+    const availH=Math.round(1123*scale)*0.82;
     let maxEms;
     if(isDouble){
       const split=this.bestColSplit(blocks);
@@ -2670,26 +2518,8 @@ class Component extends DCLogic {
     } else {
       maxEms=this.blockEms(blocks);
     }
-    if(maxEms<=0) maxEms=1;
-    const fontH=(L.availH/maxEms)*0.98;
-    // ── Restricción por ANCHURA (evita desbordes/recortes horizontales) ──
-    const colW=isDouble?Math.max(60,(L.availW-L.gap)/2):L.availW;
-    const maxLineEm=this._maxLineEm(blocks);
-    const fontW=maxLineEm>0?(colW/maxLineEm)*0.93:Infinity;
-    const sc=(songScale||1);
-    // Suelo de legibilidad bajo: preferimos reducir la letra para que el canto quepa
-    // ENTERO (sin scroll ni cortes) antes que dejarlo "a medias". Nunca parte estrofas.
-    const minFs=L.pageW<520?12:13;
-    const maxFs=44;
-    // La ANCHURA es tope DURO y NO se escala: las líneas no se parten, así que ni el
-    // ajuste del usuario ni scaleBoost pueden superar fontW (mayor tamaño que cabe a lo
-    // ancho) — de lo contrario se saldrían de la página. La ALTURA sí puede excederse:
-    // el canto hace SCROLL vertical (preferible a perder versos). Suelo de legibilidad
-    // por debajo, pero jamás por encima del ancho real.
-    let fs=Math.min(fontH,fontW)*sc;
-    fs=Math.max(fs, Math.min(minFs, fontW));
-    fs=Math.min(fs, maxFs, fontW);
-    return Math.round(fs);
+    if(maxEms<=0) return 24;
+    return Math.max(12,Math.min(56,Math.round((availH/maxEms)*(songScale||1)*0.99)));
   }
 
   _applyDark(){
@@ -2842,17 +2672,9 @@ class Component extends DCLogic {
     const m=document.createElement('div');
     m.style.cssText="position:fixed;left:-9999px;top:0;visibility:hidden;pointer-events:none;overflow:visible;font-family:'EB Garamond',Georgia,serif;white-space:nowrap;";
     document.body.appendChild(m); this._mDiv=m;
-    // En resize/orientación: reajustar tamaño de página Y recomputar la fuente óptima
-    // (renderSong -> estimateFontSize) con un re-render debounced.
-    this._onResize=()=>{ this.scheduleFit(); clearTimeout(this._rzT); this._rzT=setTimeout(()=>this.forceUpdate(),150); };
+    this._onResize=()=>this.scheduleFit();
     window.addEventListener('resize',this._onResize);
-    try{ if(window.visualViewport) window.visualViewport.addEventListener('resize',this._onResize); }catch(_){}
-    // Al hacer scroll, corregir el ajuste de los cantos que se aproximan (debounced).
-    this._onScroll=()=>{ if(this._scrollT) return; this._scrollT=setTimeout(()=>{ this._scrollT=null; this._correctVisibleFits(); },80); };
-    const _sc=document.querySelector('[data-scroll]'); if(_sc) _sc.addEventListener('scroll',this._onScroll,{passive:true});
-    this.applyPageScale(); // síncrono al montar: evita el parpadeo inicial (páginas al fallback 794px)
     this.scheduleFit();
-    this._observePages();
     if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>this.scheduleFit());
     this._applyDark();
     this.requestWakeLock();
@@ -2871,8 +2693,8 @@ class Component extends DCLogic {
     this._visHandler=()=>{if(document.visibilityState==='visible'&&this.state.wakeLockOn) this.requestWakeLock();};
     document.addEventListener('visibilitychange',this._visHandler);
   }
-  componentDidUpdate(){ this.scheduleFit(); this._applyDark(); this._observePages(); }
-  componentWillUnmount(){ window.removeEventListener('resize',this._onResize); try{ if(window.visualViewport) window.visualViewport.removeEventListener('resize',this._onResize); }catch(_){} try{ const _sc=document.querySelector('[data-scroll]'); if(_sc&&this._onScroll) _sc.removeEventListener('scroll',this._onScroll); }catch(_){} clearTimeout(this._fitTimer); clearTimeout(this._rzT); clearTimeout(this._scrollT); try{ if(this._io) this._io.disconnect(); }catch(_){} if(this._mDiv) this._mDiv.remove(); if(this._mq&&this._mqHandler) this._mq.removeEventListener('change',this._mqHandler); if(this._visHandler) document.removeEventListener('visibilitychange',this._visHandler); if(this._wakeLock) this._wakeLock.release(); if(this._ytMsgHandler) window.removeEventListener('message',this._ytMsgHandler); }
+  componentDidUpdate(){ this.scheduleFit(); this._applyDark(); }
+  componentWillUnmount(){ window.removeEventListener('resize',this._onResize); if(this._raf) cancelAnimationFrame(this._raf); if(this._mDiv) this._mDiv.remove(); if(this._mq&&this._mqHandler) this._mq.removeEventListener('change',this._mqHandler); if(this._visHandler) document.removeEventListener('visibilitychange',this._visHandler); if(this._wakeLock) this._wakeLock.release(); if(this._ytMsgHandler) window.removeEventListener('message',this._ytMsgHandler); }
 
   renderVals(){
     const bOff={background:'none',border:'none',color:'#fff',borderRadius:'4px',padding:'2px 7px',fontSize:'11px',fontFamily:"'EB Garamond',serif",cursor:'pointer',lineHeight:1.3,letterSpacing:'.3px',whiteSpace:'nowrap'};
@@ -2881,10 +2703,11 @@ class Component extends DCLogic {
     const {sem,acc,notation,menuHidden}=this.state;
 
     const list=this.songs();
-    // Layout del visor: se calcula UNA sola vez por render (no por canto) para evitar
-    // relayouts O(n²) durante el montaje inicial. Cada página LLENA el viewport real
-    // (nada de letterbox A4), y el tamaño de letra se ajusta a ese área real.
-    this._computeLayout();
+    // Escala del visor: se lee UNA sola vez por render (no por canto) para evitar
+    // relayouts O(n²) durante el montaje inicial (colgaba varios segundos al abrir).
+    {const _sc=document.querySelector('[data-scroll]');
+     if(_sc&&_sc.clientHeight) this._vpScale=Math.min(_sc.clientHeight/1123,_sc.clientWidth/794);
+     else if(this._vpScale==null) this._vpScale=0.7;}
     const defs=this.sectionDefs();
     const bySection={};
     list.forEach(s=>{if(!bySection[s.section])bySection[s.section]=[];bySection[s.section].push({id:s.id,title:s.title,number:s.number});});
