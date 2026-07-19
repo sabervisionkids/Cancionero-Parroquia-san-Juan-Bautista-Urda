@@ -21,6 +21,7 @@
     });
   }
 </script>
+<script src="vendor/qrcode.min.js"></script>
 <script src="./support.js?v=2"></script>
 </head>
 <body>
@@ -48,8 +49,18 @@ button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid 
   [data-toolbar] button{min-height:32px;}
 }
 @media print{
-  [data-toolbar],[data-toggle]{display:none!important;}
+  @page{ size:A4 portrait; margin:0; }
+  html,body{ height:auto!important; width:auto!important; overflow:visible!important; background:#fff!important; }
+  [data-toolbar],[data-toggle]{ display:none!important; }
+  [data-app]{ height:auto!important; overflow:visible!important; padding:0!important; background:#fff!important; }
+  [data-scroll]{ overflow:visible!important; height:auto!important; background:#fff!important; }
+  [data-scroll] > [data-page]{ width:210mm!important; height:297mm!important; margin:0!important; content-visibility:visible!important; contain:none!important; overflow:hidden!important; page-break-after:always; break-after:page; box-shadow:none!important; }
+  [data-scroll] > [data-page]:last-child{ page-break-after:auto; break-after:auto; }
+  [data-page]{ filter:none!important; }
+  [data-page] img{ filter:none!important; }
 }
+/* Modo "seguir" (celebración compartida por QR): sin botones, solo el cantoral */
+:root[data-follow="1"] [data-toggle]{display:none!important;}
 </style>
 <meta name="ext-resource-dependency" content="assets/portada-w.jpg" data-resource-id="portadaPng" />
 <meta name="ext-resource-dependency" content="assets/papel-w.jpg" data-resource-id="papelPng" />
@@ -69,7 +80,7 @@ button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 <div data-app style="height:100dvh;display:flex;flex-direction:column;font-family:'EB Garamond',Georgia,serif;overflow:hidden;background:var(--ct-bg-app,#8a8078);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);">
 
   <sc-if value="{{ menuVisible }}" hint-placeholder-val="{{ true }}">
-    <div data-toolbar style="flex:0 0 auto;color:#fff;display:flex;flex-wrap:nowrap;align-items:center;justify-content:center;gap:4px 6px;padding:5px 46px 5px 10px;background:var(--ct-bg-toolbar,#8B1A1A);overflow-x:auto;">
+    <div data-toolbar style="flex:0 0 auto;color:#fff;display:flex;flex-wrap:nowrap;align-items:center;justify-content:center;gap:4px 6px;padding:5px 104px 5px 10px;background:var(--ct-bg-toolbar,#8B1A1A);overflow-x:auto;">
 
       <div style="display:inline-flex;align-items:center;gap:3px;background:rgba(0,0,0,.22);border-radius:7px;padding:2px 7px;flex-shrink:0;">
         <span data-tb-label="1" style="font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#fff;margin-right:1px;white-space:nowrap;">Cifrado</span>
@@ -93,6 +104,7 @@ button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid 
         <button onClick="{{ goCelList }}" style="background:none;border:none;color:#fff;border-radius:4px;padding:2px 7px;font-size:9px;font-family:'EB Garamond',serif;cursor:pointer;font-weight:700;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;">Celebraciones</button>
       </div>
       </sc-if>
+      <button onClick="{{ toggleFullscreen }}" title="Pantalla completa" style="background:rgba(0,0,0,.22);border:none;color:#fff;border-radius:7px;padding:3px 9px;font-size:15px;line-height:1;cursor:pointer;flex-shrink:0;">⛶</button>
     </div>
   </sc-if>
   <sc-if value="{{ inCelebration }}" hint-placeholder-val="{{ false }}">
@@ -116,12 +128,94 @@ button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 {{ celListOverlay }}
 {{ celDetailOverlay }}
 {{ ytPlayerEl }}
+{{ addBtnEl }}
+{{ addModalEl }}
+{{ shareModalEl }}
 
 
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
-  state = { sem:0, acc:'sharp', notation:'anglo', scale:1, menuHidden:false, darkMode:'light', wakeLockOn:false, chordsHidden:false, celebrations:[], celDetail:null, celMode:null, celAdding:null, celSelected:[], celCreating:false, celNewName:'', celRenameId:null, celRenameName:'', celListOpen:false, celDetailId:null, celActiveId:null, cantoralScrollId:null,  personalCapos:{}, songScales:{'alza-la-mirada':1.2,'esto-que-te-doy':1.2,'gloria-aragues':1.2}, songSettings:{}, extraSongs:[], addOpen:false, addText:'', addError:'', ytPlayer:{open:false,videoId:null,url:null,x:20,y:80,embedError:false} };
+  state = { sem:0, acc:'sharp', notation:'anglo', scale:1, menuHidden:true, darkMode:'light', wakeLockOn:false, chordsHidden:false, celebrations:[], celDetail:null, celMode:null, celAdding:null, celSelected:[], celCreating:false, celNewName:'', celRenameId:null, celRenameName:'', celListOpen:false, celDetailId:null, celActiveId:null, cantoralScrollId:null,  personalCapos:{}, songScales:{}, songSettings:{}, extraSongs:[], addOpen:false, addText:'', addError:'', admin:false, followCel:null, shareUrl:null, shareName:'', printMode:false, ytPlayer:{open:false,videoId:null,url:null,x:20,y:80,embedError:false} };
+
+  // Contraseña del administrador (controla las opciones extra: añadir cantos, compartir por QR).
+  // Cámbiala aquí si quieres otra. Es un candado sencillo del lado del cliente, suficiente
+  // para una parroquia (evita que cualquiera toque el contenido).
+  ADMIN_PASS = 'Iglesia1268';
+  promptAdmin(){
+    if(this.state.admin){
+      if(confirm('¿Salir del modo administrador?')){ this.setState({admin:false}); try{localStorage.removeItem('cantoral_admin');}catch(_){} }
+      return;
+    }
+    const p = prompt('Contraseña de administrador:');
+    if(p===null) return;
+    if(p===this.ADMIN_PASS){ this.setState({admin:true}); try{localStorage.setItem('cantoral_admin','1');}catch(_){} }
+    else alert('Contraseña incorrecta.');
+  }
+
+  // ── Compartir celebración por QR / modo "seguir" ───────────────
+  // Codifica la celebración (nombre + ids de cantos) en la URL. Quien la abre entra en
+  // modo "seguir": solo título, momento y letra (sin acordes ni botones).
+  cel_shareData(cel){
+    const data={n:cel.name, s:(cel.songs||[])};
+    let enc='';
+    try{ enc=btoa(unescape(encodeURIComponent(JSON.stringify(data)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }catch(_){}
+    return location.origin+location.pathname+'#f='+enc;
+  }
+  cel_share(celId){
+    const cel=this.state.celebrations.find(c=>c.id===celId);
+    if(!cel||!cel.songs.length){ alert('La celebración no tiene cantos.'); return; }
+    this.setState({shareUrl:this.cel_shareData(cel), shareName:cel.name});
+  }
+  _decodeFollow(){
+    try{
+      const m=(location.hash||'').match(/[#&]f=([^&]+)/);
+      if(!m) return null;
+      let s=m[1].replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4) s+='=';
+      const data=JSON.parse(decodeURIComponent(escape(atob(s))));
+      if(data && Array.isArray(data.s) && data.s.length) return data;
+    }catch(_){}
+    return null;
+  }
+  renderShareModal(){
+    if(!this.state.shareUrl) return null;
+    const R=React.createElement,{rojo,negro,gris,bg}=this.pal();
+    const url=this.state.shareUrl;
+    let qrData='';
+    try{ if(typeof qrcode!=='undefined'){ const qr=qrcode(0,'M'); qr.addData(url); qr.make(); qrData=qr.createDataURL(6,2); } }catch(_){}
+    return R('div',{onClick:()=>this.setState({shareUrl:null}),style:{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',zIndex:400,display:'flex',alignItems:'center',justifyContent:'center',padding:'16px'}},
+      R('div',{onClick:(e)=>e.stopPropagation(),style:{background:bg,borderRadius:'14px',padding:'22px 26px',width:'min(420px,94%)',textAlign:'center',fontFamily:"'EB Garamond',serif"}},
+        R('div',{style:{fontFamily:"'Playfair Display',serif",fontStyle:'italic',fontSize:'24px',color:negro,marginBottom:'2px'}},'Compartir celebración'),
+        R('div',{style:{fontSize:'15px',color:gris,marginBottom:'16px'}},this.state.shareName||''),
+        qrData
+          ? R('img',{src:qrData,alt:'QR',style:{width:'240px',height:'240px',margin:'0 auto 12px',display:'block',imageRendering:'pixelated',background:'#fff',borderRadius:'8px',padding:'6px'}})
+          : R('div',{style:{color:'#b00',marginBottom:'12px'}},'No se pudo generar el QR'),
+        R('div',{style:{fontSize:'13px',color:gris,marginBottom:'14px'}},'La gente escanea el QR con la cámara y sigue los cantos (solo letra).'),
+        R('div',{style:{display:'flex',gap:'10px',justifyContent:'center'}},
+          R('button',{onClick:()=>{ try{ if(navigator.clipboard) navigator.clipboard.writeText(url); }catch(_){}; alert('Enlace copiado.'); },style:{background:rojo,color:'#fff',border:'none',borderRadius:'8px',padding:'8px 18px',cursor:'pointer',fontFamily:"'EB Garamond',serif",fontSize:'15px'}},'Copiar enlace'),
+          R('button',{onClick:()=>this.setState({shareUrl:null}),style:{background:'none',border:'1px solid '+gris,color:negro,borderRadius:'8px',padding:'8px 18px',cursor:'pointer',fontFamily:"'EB Garamond',serif",fontSize:'15px'}},'Cerrar')
+        )
+      )
+    );
+  }
+
+  // Genera el cantoral en A4 para imprimir / guardar como PDF (solo títulos, acordes,
+  // sección arriba-derecha y origen+página abajo). Abre el diálogo de impresión del navegador.
+  printCantoral(){
+    this.setState({printMode:true, menuHidden:true, celListOpen:false, celDetailId:null}, ()=>{
+      setTimeout(()=>{
+        try{
+          const sc=document.querySelector('[data-scroll]');
+          if(sc){
+            const ps=sc.querySelectorAll(':scope > [data-page]');
+            ps.forEach(p=>{ p.style.contentVisibility='visible'; });
+            ps.forEach(p=>this._correctPage(p)); // ajustar la letra de TODAS las páginas antes de imprimir
+          }
+        }catch(_){}
+        setTimeout(()=>{ try{ window.print(); }catch(_){}; setTimeout(()=>this.setState({printMode:false}),700); }, 250);
+      }, 450);
+    });
+  }
 
   // ── Transposición ──────────────────────────────────────────────
   isDark(){ const dm=this.state.darkMode; if(dm==='dark') return true; if(dm==='light') return false; try{return window.matchMedia('(prefers-color-scheme: dark)').matches;}catch(_){return false;} }
@@ -1984,7 +2078,7 @@ class Component extends DCLogic {
     // Chord-only line (intro/outro marker): render compactly
     const isChordOnly=segsRaw.every(s=>!(s[1]||'').trim());
     if(isChordOnly){
-      return R('div',{key,style:{color:hideChords?'transparent':rojo,fontWeight:700,fontSize:'0.72em',letterSpacing:'0.04em',marginBottom:'0.4em',whiteSpace:'nowrap'}},
+      return R('div',{key,style:{color:hideChords?'transparent':rojo,fontWeight:700,fontSize:'0.82em',letterSpacing:'0.04em',marginBottom:'0.4em',whiteSpace:'nowrap'}},
         segsRaw.filter(s=>s[0]).map((s,i)=>R('span',{key:i,style:{marginRight:'0.5em'}},this.trans(s[0])))
       );
     }
@@ -2008,7 +2102,7 @@ class Component extends DCLogic {
         const chord=s[0]?this.trans(s[0]):null;
         const lyric=(String(s[1])||'').replace(/ +$/,m=>'\u00A0'.repeat(m.length))||'\u00A0';
         return R('span',{key:i,style:{display:'inline-flex',flexDirection:'column',alignItems:'flex-start',verticalAlign:'bottom',whiteSpace:'nowrap'}},
-          visHasChord?R('span',{style:{color:chord?rojo:'transparent',fontWeight:700,fontSize:'0.72em',lineHeight:'1.15',whiteSpace:'nowrap',minHeight:'1em'}},chord||'\u00A0'):null,
+          visHasChord?R('span',{style:{color:chord?rojo:'transparent',fontWeight:700,fontSize:'0.82em',lineHeight:'1.15',whiteSpace:'nowrap',minHeight:'1em'}},chord||'\u00A0'):null,
           R('span',{style:{fontWeight:'normal',lineHeight:'1.45',letterSpacing:'0.02em',whiteSpace:'nowrap'}},lyric)
         );
       });
@@ -2020,13 +2114,9 @@ class Component extends DCLogic {
       let lyric=(String(s[1])||'').replace(/ +$/,m=>'\u00A0'.repeat(m.length))||'\u00A0';
       const isHidden=lyric.startsWith('>>');
       if(isHidden) lyric=lyric.slice(2)||'\u00A0';
-      const nextChord=!!(segs[i+1]&&segs[i+1][0]);
-      // Columna sílaba: acorde (0.72em, estrecho) sobre la letra; ancho = máx(acorde,letra)
-      // para que los acordes NUNCA se pisen. Si la sílaba siguiente lleva acorde, se
-      // reserva un hueco mínimo (paddingRight) para que dos acordes no se lean como uno
-      // ("A7" + "D" nunca "A7D"). Sin guiones ni relleno a mitad de palabra.
+      // inline-flex column: chord row on top, lyric below — width = max(chord,lyric), no overflow
       return R('span',{key:i,style:{display:'inline-flex',flexDirection:'column',alignItems:'flex-start',verticalAlign:'bottom',whiteSpace:'nowrap'}},
-        hasAnyChord?R('span',{style:{color:isHidden||hideChords?'transparent':(chord?rojo:'transparent'),fontWeight:700,fontSize:'0.72em',lineHeight:'1.15',whiteSpace:'nowrap',minHeight:'1em',paddingRight:nextChord?'0.5em':undefined}},chord||'\u00A0'):null,
+        hasAnyChord?R('span',{style:{color:isHidden||hideChords?'transparent':(chord?rojo:'transparent'),fontWeight:700,fontSize:'0.82em',lineHeight:'1.15',whiteSpace:'nowrap',minHeight:'1em'}},chord||'\u00A0'):null,
         R('span',{style:{fontWeight:isChorus?700:'normal',lineHeight:'1.45',letterSpacing:'0.02em',whiteSpace:'nowrap',color:isHidden?'transparent':undefined}},lyric)
       );
     });
@@ -2069,13 +2159,18 @@ class Component extends DCLogic {
       const deficit=Math.ceil(chordW-lyricW);
       if(deficit<=0) continue;
       const lv=vis(lyric);
-      // Solo se a\u00F1ade separaci\u00F3n cuando la s\u00EDlaba termina en L\u00CDMITE DE PALABRA
-      // (espacio/puntuaci\u00F3n): as\u00ED los acordes anchos no se pisan entre palabras.
-      // A mitad de palabra NO se parte ni se a\u00F1ade hueco: las s\u00EDlabas siguen juntas
-      // (p.ej. "cara" con acordes en "ca" y "ra" se lee "cara", no "ca-ra"/"ca ra").
+      // \u00BFLa s\u00EDlaba termina en l\u00EDmite de palabra? Entonces solo se a\u00F1ade espacio (NBSP)
+      // entre palabras. Si es MITAD de palabra, se separa con GUI\u00D3N "-" (p.ej. "ca-ra"),
+      // para que se vea claramente que es una sola palabra partida por el acorde.
       const atBoundary=/[\s,.\-!?;:]$/.test(lv)||!lv.trim();
       if(atBoundary){
         out[i][1]=lyric+'\u00A0'.repeat(deficit);
+      } else {
+        // Mitad de palabra: se marca con GUI\u00D3N para que se vea que es UNA palabra partida
+        // por el acorde ("ca-ra"), en vez de un hueco que parezca dos palabras distintas.
+        const nx=(i+1<out.length)?vis(out[i+1][1]):'';
+        const joins=/^[A-Za-z\u00C1\u00C9\u00CD\u00D3\u00DA\u00DC\u00D1\u00E1\u00E9\u00ED\u00F3\u00FA\u00FC\u00F1]/.test(nx);
+        out[i][1]=joins ? (lyric+'-'+'\u00A0'.repeat(Math.max(0,deficit-1))) : (lyric+'\u00A0'.repeat(deficit));
       }
     }
     return out;
@@ -2283,30 +2378,30 @@ class Component extends DCLogic {
   renderIndex(sections){
     const R=React.createElement,{rojo,negro,bg}=this.pal();
     const L=this._L||this._computeLayout();
-    const idxTitleFs=Math.round(Math.max(30,Math.min(48,L.pageW*0.06)));
-    const idxEntryFs=Math.round(Math.max(15,Math.min(20,L.pageW*0.024)));
-    const splitAfter=sections.findIndex(s=>s.name==='Cordero de Dios');
-    const half=splitAfter>=0?splitAfter+1:Math.ceil(sections.length/2);
-    const page1secs=sections.slice(0,half);
-    const page2secs=sections.slice(half);
-    const makeGroups=(secs)=>secs.map((sec,i)=>R('div',{key:i,style:{marginBottom:'1.3em',breakInside:'avoid'}},
-      R('div',{style:{fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:'1.5em',letterSpacing:'.3px',color:rojo,marginBottom:'0.35em',borderBottom:'2px solid rgba(139,26,26,.45)',paddingBottom:'0.15em'}},sec.name),
+    const idxTitleFs=Math.round(Math.max(24,Math.min(44,L.pageW*0.048)));
+    const gap=28;
+    // N\u00BA de columnas FIJO seg\u00FAn el ancho (nunca crea columnas de m\u00E1s \u2192 no se va de lado).
+    // Ancho m\u00EDnimo de columna 150px: en m\u00F3vil caben 2 columnas (t\u00EDtulos cortos) y as\u00ED el
+    // \u00EDndice cabe sin scroll; en pantallas anchas, 3-4.
+    let nCols=Math.max(1,Math.floor((L.availW+gap)/(150+gap)));
+    nCols=Math.min(nCols,4);
+    // Tama\u00F1o base inicial estimado para que quepa; la correcci\u00F3n medida (_correctPage) lo afina.
+    let units=0; sections.forEach(s=>{ units+=2.4+s.songs.length*1.5; });
+    const availIdx=L.pageH-(L.padY+8)*2-Math.round(idxTitleFs*1.6);
+    const baseFs=Math.max(13,Math.min(19,Math.floor(availIdx/((units/nCols)*1.25))));
+    const entryStyle={display:'flex',justifyContent:'space-between',gap:'10px',textDecoration:'none',color:negro,padding:'0.26em 0.1em',borderBottom:'1px dotted rgba(0,0,0,.16)',cursor:'pointer',fontSize:'1em'};
+    const groups=sections.map((sec,i)=>R('div',{key:i,style:{marginBottom:'1.1em',breakInside:'avoid'}},
+      R('div',{style:{fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:'1.35em',letterSpacing:'.3px',color:rojo,marginBottom:'0.3em',borderBottom:'2px solid rgba(139,26,26,.45)',paddingBottom:'0.12em'}},sec.name),
       sec.songs.map((s,j)=>R('a',{key:j,onClick:(e)=>{e.preventDefault();this.goTo(s.id);},style:entryStyle},
-        R('span',{},s.title),R('span',{style:{color:rojo,fontWeight:700}},String(s.sectionPage||''))))
+        R('span',{style:{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',minWidth:0}},s.title),
+        R('span',{style:{color:rojo,fontWeight:700,flexShrink:0}},String(s.sectionPage||''))))
     ));
-    const pageStyle={overflowY:'auto',background:bg,display:'flex',flexDirection:'column',padding:(L.padY+8)+'px '+L.padX+'px'};
-    const title=(t)=>R('div',{style:{fontFamily:"'Playfair Display',serif",fontStyle:'italic',fontSize:idxTitleFs+'px',color:negro,textAlign:'center',marginBottom:'0.4em'}},t);
-    const entryStyle={display:'flex',justifyContent:'space-between',gap:'12px',textDecoration:'none',color:negro,padding:'0.35em 0.1em',borderBottom:'1px dotted rgba(0,0,0,.16)',cursor:'pointer',fontSize:idxEntryFs+'px'};
-    return [
-      R('section',{key:'indice-1',id:'indice','data-page':'1',style:pageStyle},
-        title('\u00CDndice'),
-        R('div',{style:{flex:'1 1 auto',columnWidth:'220px',columnGap:'28px',columnFill:'auto',minHeight:0}},makeGroups(page1secs))
-      ),
-      R('section',{key:'indice-2','data-page':'1b',style:pageStyle},
-        title('\u00CDndice'),
-        R('div',{style:{flex:'1 1 auto',columnWidth:'220px',columnGap:'28px',columnFill:'auto',minHeight:0}},makeGroups(page2secs))
-      )
-    ];
+    const pageStyle={overflowY:'auto',overflowX:'hidden',background:bg,display:'flex',flexDirection:'column',padding:(L.padY+8)+'px '+L.padX+'px'};
+    const title=R('div',{style:{fontFamily:"'Playfair Display',serif",fontStyle:'italic',fontSize:idxTitleFs+'px',color:negro,textAlign:'center',marginBottom:'0.3em',flex:'0 0 auto'}},'\u00CDndice');
+    return R('section',{key:'indice',id:'indice','data-page':'1','data-indexpage':'1',style:pageStyle},
+      title,
+      R('div',{'data-indexcols':'1',style:{flex:'0 0 auto',columnCount:nCols,columnGap:gap+'px',columnFill:'balance',fontSize:baseFs+'px'}},groups)
+    );
   }
 
   renderSection(name,subtitle,key){
@@ -2342,11 +2437,23 @@ class Component extends DCLogic {
     );
   }
 
-  renderSong(song){
+  // Portada del modo "seguir" (celebración compartida por QR).
+  renderFollowCover(name){
+    const R=React.createElement,{rojo}=this.pal();
+    const L=this._L||this._computeLayout();
+    return R('section',{key:'fcover','data-page':'1',style:{height:'100%',width:'100%',overflow:'hidden',position:'relative',background:'#F5F0E8',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'0 '+L.padX+'px',textAlign:'center'}},
+      R('img',{src:window.__resources&&window.__resources.escudoPng||'assets/escudo-w.png',alt:'',style:{width:Math.round(Math.min(220,L.pageW*0.3))+'px',opacity:.9,marginBottom:'24px'}}),
+      R('div',{style:{fontFamily:"'EB Garamond',serif",fontStyle:'italic',fontSize:'17px',color:'#777',marginBottom:'10px'}},'Parroquia San Juan Bautista · Urda'),
+      R('div',{style:{fontFamily:"'Playfair Display',serif",fontStyle:'italic',fontWeight:700,fontSize:Math.round(Math.min(56,L.pageW*0.07))+'px',color:rojo,lineHeight:1.1}},name||'Celebración'),
+      R('div',{style:{marginTop:'28px',fontFamily:"'EB Garamond',serif",fontSize:'16px',color:'#999'}},'Desliza para seguir los cantos')
+    );
+  }
+
+  renderSong(song, followMode, printMode){
     const R=React.createElement,{rojo,negro,gris,bg}=this.pal();
     const L=this._L||this._computeLayout();
     const pad=L.padY+'px '+L.padX+'px';
-    const hideChords=this.state.chordsHidden;
+    const hideChords=followMode?true:(printMode?false:this.state.chordsHidden);
     const personalCapo=(this.state.personalCapos[song.id]!==undefined&&this.state.personalCapos[song.id]!==null)?this.state.personalCapos[song.id]:0;
     const setPersonalCapo=(n)=>{
       const capos={...this.state.personalCapos,[song.id]:n};
@@ -2365,14 +2472,14 @@ class Component extends DCLogic {
       });
     };
     const bsz={background:'rgba(0,0,0,.06)',border:'1px solid rgba(0,0,0,.12)',color:'#555',borderRadius:'3px',padding:'1px 6px',cursor:'pointer',fontSize:'11px',lineHeight:1.4,fontFamily:"'EB Garamond',serif",fontStyle:'normal'};
-    const topbar=R('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:'12px',fontStyle:'italic',textTransform:'uppercase',letterSpacing:'.5px',color:gris,flex:'0 0 auto'}},
-      R('a',{onClick:(e)=>{e.preventDefault();this.goTo('indice');},style:{color:gris,textDecoration:'underline',cursor:'pointer'}},'\u00CDndice'),
+    const topbar=R('div',{style:{display:'flex',justifyContent:followMode?'center':'space-between',alignItems:'center',fontSize:'12px',fontStyle:'italic',textTransform:'uppercase',letterSpacing:'.5px',color:gris,flex:'0 0 auto'}},
+      (followMode||printMode)?null:R('a',{onClick:(e)=>{e.preventDefault();this.goTo('indice');},style:{color:gris,textDecoration:'underline',cursor:'pointer'}},'\u00CDndice'),
       R('span',{},song.section)
     );
     const ytUrl=song.youtube||this.youtubeLinks()[song.id]||'';
     const titleRow=R('div',{style:{display:'flex',alignItems:'center',justifyContent:'center',gap:'10px',marginTop:'10px',marginBottom:'18px',flexWrap:'wrap',flex:'0 0 auto'}},
       R('div',{style:{fontFamily:"'Amaranth',sans-serif",fontStyle:'italic',fontWeight:700,fontSize:L.titleFs+'px',color:rojo,textAlign:'center',lineHeight:1.05}},song.title),
-      this.ytIcon(song,ytUrl)
+      (followMode||printMode)?null:this.ytIcon(song,ytUrl)
     );
 
     const songSt=this.state.songSettings[song.id]||{};
@@ -2407,31 +2514,25 @@ class Component extends DCLogic {
     );
 
     const _blocks=song.blocks;
-    // En pantallas estrechas (móvil) forzamos 1 columna: dos columnas obligarían a una
-    // fuente diminuta o recortarían las líneas. En tablet/escritorio se respeta el diseño.
-    const _singleCol=song.columns===1||_blocks.length<=1||(L.pageW<600);
-    let colEl;
-    if(_singleCol){
-      colEl=R('div',{style:{flex:'1 1 0',minWidth:0,overflow:'visible'}},_blocks.map((b,i)=>this.renderBlock(b,'b'+i,hideChords)));
-    } else {
-      const _split=this.bestColSplit(_blocks);
-      const _left=_blocks.slice(0,_split),_right=_blocks.slice(_split);
-      colEl=R(React.Fragment,null,
-        R('div',{style:{flex:'1 1 0',minWidth:0,overflow:'visible'}},_left.map((b,i)=>this.renderBlock(b,'b'+i,hideChords))),
-        R('div',{style:{flex:'1 1 0',minWidth:0,overflow:'visible'}},_right.map((b,i)=>this.renderBlock(b,'br'+i,hideChords)))
-      );
-    }
+    // Nº de columnas AUTOMÁTICO: el que hace caber el canto ENTERO sin scroll al mayor
+    // tamaño legible (1 en móvil, hasta 3-4 en pantallas anchas). Nunca parte estrofas.
+    let _nCols=1;
+    try{ _nCols=this.chooseColumnCount(_blocks); }catch(e){ _nCols=1; }
+    const _groups=this.splitColumns(_blocks,_nCols);
+    const colEl=_nCols<=1
+      ? R('div',{style:{flex:'1 1 0',minWidth:0,overflow:'visible'}},_blocks.map((b,i)=>this.renderBlock(b,'b'+i,hideChords)))
+      : R(React.Fragment,null,_groups.map((g,ci)=>R('div',{key:'col'+ci,style:{flex:'1 1 0',minWidth:0,overflow:'visible'}},g.map((b,i)=>this.renderBlock(b,'c'+ci+'b'+i,hideChords)))));
     const _perSongScale=this.state.songScales[song.id]||1;
     const _globalScale=this.state.scale||1;
     // Tamaño de letra 100% analítico (no lee el DOM): rápido y sin reflows.
     let fittedFs=24;
-    // scaleBoost va DENTRO del estimador (como parte de songScale) para que quede sujeto
-    // al tope de ancho: nunca puede empujar una línea fuera de la página.
-    try{fittedFs=this.estimateFontSize(_blocks,!_singleCol,_perSongScale*_globalScale*(song.scaleBoost||1));}catch(e){console.error('estimateFontSize error',e,song.id);}
+    // El tamaño lo decide el ajuste automático a una página; _perSongScale/_globalScale son
+    // los botones "Texto +/–" del usuario (parten de ese ajuste).
+    try{fittedFs=this.estimateFontSize(_blocks,_nCols,_perSongScale*_globalScale);}catch(e){console.error('estimateFontSize error',e,song.id);}
     const cols=R('div',{'data-cols':'1',style:{width:'100%',flex:'0 0 auto',minHeight:0,display:'flex',flexDirection:'row',justifyContent:'space-between',gap:L.gap+'px',position:'relative',zIndex:1,overflow:'visible',fontSize:(fittedFs||24)+'px'}},colEl);
 
     const bodyWrap=R('div',{'data-bodywrap':'1',style:{flex:'1 1 auto',minHeight:0,display:'flex',flexDirection:'column',alignItems:'stretch',overflowY:'auto',overflowX:'hidden'}},
-      capoRow, cols
+      (followMode||printMode)?null:capoRow, cols
     );
 
     const footer=R('div',{style:{position:'absolute',bottom:'18px',left:0,right:0,fontSize:'13px',color:gris,borderTop:'1px solid rgba(139,26,26,.12)',padding:'6px '+(L.padX+16)+'px 0',zIndex:2,display:'flex',alignItems:'baseline',justifyContent:'space-between',gap:'14px'}},
@@ -2523,6 +2624,19 @@ class Component extends DCLogic {
   // la fuente lo justo para que ninguna línea se salga. Idempotente.
   _correctPage(w){
     if(!w) return;
+    // Índice: reducir la fuente hasta que TODO quepa en la página (sin scroll ni desborde).
+    const idx=w.querySelector('[data-indexcols]');
+    if(idx){
+      const page=idx.closest('section')||w;
+      let guard=0;
+      while(page.scrollHeight>page.clientHeight+2 && guard<12){
+        const cur=parseFloat(idx.style.fontSize)||parseFloat(getComputedStyle(idx).fontSize)||16;
+        const nf=Math.floor(cur*0.94);
+        if(nf<13||nf>=cur) break; // suelo legible; si no cabe ni así, se permite scroll vertical
+        idx.style.fontSize=nf+'px'; guard++;
+      }
+      return;
+    }
     const cols=w.querySelector('[data-cols]'); if(!cols) return;
     let ratio=1;
     for(const col of cols.children){ if(col.scrollWidth>col.clientWidth+1) ratio=Math.min(ratio, col.clientWidth/col.scrollWidth); }
@@ -2594,15 +2708,80 @@ class Component extends DCLogic {
     return bestSplit;
   }
 
+  // Reparte los bloques (estrofas/estribillos) en N columnas, cortando SOLO en límites de
+  // estrofa (NUNCA parte una) y respetando saltos forzados (colBreak). Regla clave: la
+  // columna IZQUIERDA es la principal → cada columna se llena hasta alcanzar la media del
+  // resto, de modo que si hay desequilibrio, la de la izquierda es la más larga (>= derecha),
+  // con la mínima diferencia posible.
+  splitColumns(blocks, n){
+    n=Math.max(1,Math.min(n,blocks.length));
+    if(n<=1) return [blocks];
+    const h=blocks.map(b=>this.blockEms([b]));
+    const groups=[];
+    let i=0, colsLeft=n, remain=h.reduce((a,x)=>a+x,0);
+    while(colsLeft>1 && i<blocks.length){
+      const target=remain/colsLeft;                 // media del resto: la columna se llena HASTA >= media
+      const maxTake=(blocks.length-i)-(colsLeft-1);  // dejar al menos 1 bloque por columna restante
+      const start=i; let cum=0, taken=0;
+      while(i<blocks.length){
+        if(i>start && blocks[i].colBreak) break;     // salto de columna forzado
+        cum+=h[i]; remain-=h[i]; i++; taken++;
+        if(taken>=maxTake) break;
+        if(cum>=target) break;                       // columna llena (>= media => izquierda más larga)
+      }
+      groups.push(blocks.slice(start,i));
+      colsLeft--;
+    }
+    groups.push(blocks.slice(i));                    // última columna (derecha): el resto, siempre <= anteriores
+    while(groups.length<n) groups.push([]);
+    return groups;
+  }
+
+  // Elige el nº de columnas (1..4) que permite mostrar el canto ENTERO (sin scroll) al
+  // MAYOR tamaño legible. Más columnas => columnas más cortas (cabe más alto) pero más
+  // estrechas (menos ancho). Se prueba cada N y se elige el de mayor fuente resultante,
+  // prefiriendo menos columnas salvo que añadir una mejore el tamaño de forma clara.
+  chooseColumnCount(blocks){
+    const L=this._L||this._computeLayout();
+    if(blocks.length<=1) return 1;
+    const maxLineEm=this._maxLineEm(blocks)||1;
+    const minFont=12;
+    // ancho mínimo por columna para que la línea más larga quepa a tamaño legible
+    const minColPx=Math.max(150,maxLineEm*minFont);
+    const capByWidth=Math.max(1,Math.floor((L.availW+L.gap)/(minColPx+L.gap)));
+    const cap=Math.max(1,Math.min(4,capByWidth,blocks.length));
+    let best=1,bestFs=-1;
+    for(let n=1;n<=cap;n++){
+      const colW=(L.availW-(n-1)*L.gap)/n;
+      const fontW=colW/maxLineEm;
+      const maxColEms=Math.max(...this.splitColumns(blocks,n).map(g=>this.blockEms(g)))||1;
+      const fontH=L.availH/maxColEms;
+      const fs=Math.min(fontH,fontW);
+      if(fs>bestFs*1.06){ bestFs=fs; best=n; } // solo más columnas si mejora >6%
+    }
+    return best;
+  }
+
   // ── Layout responsive ──────────────────────────────────────────
   // Calcula, UNA vez por render, las dimensiones reales del área de página a
   // partir del contenedor de scroll. Cada página llena el viewport (sin A4 fijo).
   _computeLayout(){
+    if(this._printMode){
+      // Impresión: página A4 fija (794×1123 px a 96 dpi = 210×297 mm). Sin cejilla/tono
+      // (no van en papel), así que el "cromo" ocupa menos y el texto aprovecha más.
+      const pageW=794, pageH=1123, padX=48, padY=42, titleFs=38, gap=26;
+      const chromeH=padY+42/*pie*/+16/*topbar*/+Math.round(titleFs*1.1)+22/*título*/+8;
+      const availH=Math.max(140,pageH-chromeH);
+      const availW=pageW-padX*2;
+      this._L={vw:pageW,vh:pageH,pageW,pageH,padX,padY,titleFs,gap,availH,availW};
+      return this._L;
+    }
     const sc=document.querySelector('[data-scroll]');
     const vw=(sc&&sc.clientWidth)?sc.clientWidth:(window.innerWidth||794);
     const vh=(sc&&sc.clientHeight)?sc.clientHeight:(window.innerHeight||1123);
-    // En pantallas grandes limitamos el ancho para conservar el aspecto de "libro".
-    const pageW=Math.min(vw,980);
+    // En pantallas anchas usamos más ancho para poder repartir el canto en 3+ columnas
+    // (y que quepa entero sin scroll), con un tope para no perder legibilidad.
+    const pageW=Math.min(vw,1280);
     const pageH=Math.max(320,vh);
     const padX=Math.max(14,Math.min(60,Math.round(pageW*0.055)));
     const padY=Math.max(12,Math.min(40,Math.round(pageH*0.022)));
@@ -2626,7 +2805,7 @@ class Component extends DCLogic {
   // y la letra. Sumando por sílaba se obtiene el ancho real, incluyendo el relleno de
   // alineación de acordes (que ensancha las líneas y provocaba recortes horizontales).
   _lineWidthEm(line){
-    const CH=0.72*1.06; // factor de ancho del acorde (0.72em + ~6% de negrita)
+    const CH=0.82*1.06; // factor de ancho del acorde (0.82em + ~6% de negrita)
     const isChordOnly=line.every(s=>!(String(s[1]||'')).trim());
     if(isChordOnly){
       let w=0;
@@ -2645,8 +2824,7 @@ class Component extends DCLogic {
       const chord=seg[0]?this.trans(seg[0]):'';
       let lyric=String(seg[1]||'').replace(/ /g,' ');
       if(lyric.startsWith('>>')) lyric=lyric.slice(2);
-      const nextChord=!!(line[i+1]&&line[i+1][0]);
-      const chordW=chord?(this._measEm(chord)*CH + (nextChord?0.5*0.72:0)):0; // + hueco entre acordes
+      const chordW=chord?this._measEm(chord)*CH:0;
       const lyricW=this._measEm(lyric);
       w+=Math.max(chordW,lyricW);
     }
@@ -2660,41 +2838,34 @@ class Component extends DCLogic {
 
   // Tamaño de fuente óptimo: el MAYOR que cabe a la vez en ALTO y en ANCHO del área
   // real disponible (por columna), sin recortes ni scroll innecesario.
-  estimateFontSize(blocks, isDouble, songScale){
+  estimateFontSize(blocks, nCols, songScale){
     const L=this._L||this._computeLayout();
-    // ── Restricción por ALTURA ──
-    let maxEms;
-    if(isDouble){
-      const split=this.bestColSplit(blocks);
-      maxEms=Math.max(this.blockEms(blocks.slice(0,split)), this.blockEms(blocks.slice(split)));
-    } else {
-      maxEms=this.blockEms(blocks);
-    }
-    if(maxEms<=0) maxEms=1;
+    const n=Math.max(1,nCols||1);
+    // ── Restricción por ALTURA (columna más alta del reparto en n columnas) ──
+    let maxEms=Math.max(...this.splitColumns(blocks,n).map(g=>this.blockEms(g)));
+    if(!(maxEms>0)) maxEms=1;
     const fontH=(L.availH/maxEms)*0.98;
     // ── Restricción por ANCHURA (evita desbordes/recortes horizontales) ──
-    const colW=isDouble?Math.max(60,(L.availW-L.gap)/2):L.availW;
+    const colW=Math.max(60,(L.availW-(n-1)*L.gap)/n);
     const maxLineEm=this._maxLineEm(blocks);
     const fontW=maxLineEm>0?(colW/maxLineEm)*0.93:Infinity;
     const sc=(songScale||1);
-    // Suelo de legibilidad bajo: preferimos reducir la letra para que el canto quepa
-    // ENTERO (sin scroll ni cortes) antes que dejarlo "a medias". Nunca parte estrofas.
-    const minFs=L.pageW<520?12:13;
+    const minFs=9;
     const maxFs=44;
-    // La ANCHURA es tope DURO y NO se escala: las líneas no se parten, así que ni el
-    // ajuste del usuario ni scaleBoost pueden superar fontW (mayor tamaño que cabe a lo
-    // ancho) — de lo contrario se saldrían de la página. La ALTURA sí puede excederse:
-    // el canto hace SCROLL vertical (preferible a perder versos). Suelo de legibilidad
-    // por debajo, pero jamás por encima del ancho real.
-    let fs=Math.min(fontH,fontW)*sc;
-    fs=Math.max(fs, Math.min(minFs, fontW));
-    fs=Math.min(fs, maxFs, fontW);
+    // Tamaño base = el mayor que hace caber el canto ENTERO en una página (fitFs). La escala
+    // del usuario (botones Texto +/–) parte de ahí: puede AGRANDAR (aceptando algo de scroll
+    // si se pasa) o reducir. El ANCHO es tope DURO: nunca se recorta una palabra.
+    const fitFs=Math.min(fontH,fontW);
+    let fs=fitFs*sc;
+    fs=Math.min(fs, fontW, maxFs);
+    fs=Math.max(fs, minFs);
     return Math.round(fs);
   }
 
   _applyDark(){
     const dark=this.isDark();
     const p=this.pal();
+    try{ document.documentElement.setAttribute('data-follow', this.state.followCel?'1':''); }catch(_){}
     const r=document.documentElement.style;
     r.setProperty('--ct-bg-app',p.bgApp);
     r.setProperty('--ct-bg-scroll',p.bgScroll);
@@ -2793,6 +2964,7 @@ class Component extends DCLogic {
       R('div',{style:{marginTop:'16px',display:'flex',gap:'10px',flexWrap:'wrap'}},
         R('button',{style:priSt,onClick:()=>this.setState({celAdding:cel.id,celSelected:[]})},'+ Añadir canciones'),
         n>0?R('button',{style:{...priSt,background:'#4a7a30',fontSize:'15px'},onClick:()=>this.cel_startMode(cel.id)},'▶ Modo Celebración'):null,
+        n>0?R('button',{style:{...priSt,background:'#3E5C76',fontSize:'15px'},onClick:()=>this.cel_share(cel.id)},'⧉ Compartir (QR)'):null,
         R('button',{style:{...btnSt,marginLeft:'auto',borderColor:'#b00',color:'#b00'},onClick:()=>this.cel_delete(cel.id)},'Eliminar'),
       ),
     ));
@@ -2835,6 +3007,8 @@ class Component extends DCLogic {
     try{ const cl=localStorage.getItem('cantoral_cels'); if(cl) this.setState({celebrations:JSON.parse(cl)}); }catch(_){}
     try{ const s=localStorage.getItem('cantoral_capos'); if(s) this.setState({personalCapos:JSON.parse(s)}); }catch(_){}
     try{ const e=localStorage.getItem('cantoral_extra'); if(e) this.setState({extraSongs:JSON.parse(e)}); }catch(_){}
+    try{ if(localStorage.getItem('cantoral_admin')==='1') this.setState({admin:true}); }catch(_){}
+    const _follow=this._decodeFollow(); if(_follow){ this.setState({followCel:_follow, menuHidden:true}); }
     try{ const sc=localStorage.getItem('cantoral_scales'); if(sc) this.setState({songScales:JSON.parse(sc)}); }catch(_){}
     try{ const ss=localStorage.getItem('cantoral_song_settings'); if(ss) this.setState({songSettings:JSON.parse(ss)}); }catch(_){}
     try{ const p=localStorage.getItem('cantoral_prefs'); if(p){ const o=JSON.parse(p); const patch={}; ['sem','acc','notation','scale','darkMode','chordsHidden'].forEach(k=>{ if(o[k]!==undefined) patch[k]=o[k]; }); this.setState(patch); } }catch(_){}
@@ -2881,9 +3055,9 @@ class Component extends DCLogic {
     const {sem,acc,notation,menuHidden}=this.state;
 
     const list=this.songs();
+    this._printMode = !!this.state.printMode;   // impresión A4: layout de página A4 fija
     // Layout del visor: se calcula UNA sola vez por render (no por canto) para evitar
-    // relayouts O(n²) durante el montaje inicial. Cada página LLENA el viewport real
-    // (nada de letterbox A4), y el tamaño de letra se ajusta a ese área real.
+    // relayouts O(n²) durante el montaje inicial.
     this._computeLayout();
     const defs=this.sectionDefs();
     const bySection={};
@@ -2891,9 +3065,29 @@ class Component extends DCLogic {
     const sections=defs.filter(d=>(bySection[d.name]||[]).length>0).map(d=>({name:d.name,songs:(bySection[d.name]||[]).map((s,i)=>({...s,sectionPage:i+1}))}));
 
     const pages=[];
+    const followCel=this.state.followCel;
     const {celActiveId,celebrations}=this.state;
     const activeCeleb=celActiveId?celebrations.find(c=>c.id===celActiveId):null;
-    if(activeCeleb){
+    if(this.state.printMode){
+      // Impresión A4: TODOS los cantos en orden (por sección y título), con acordes,
+      // sección arriba-derecha y origen+nº de página abajo. Sin controles ni índice.
+      const bySectionP={};
+      list.forEach(s=>{if(!bySectionP[s.section])bySectionP[s.section]=[];bySectionP[s.section].push(s);});
+      let pnum=0;
+      this.sectionDefs().forEach((def)=>{
+        (bySectionP[def.name]||[]).forEach((s)=>{
+          pnum++;
+          const st=this.state.songSettings[s.id]||{}; this._rSem=st.sem!==undefined?st.sem:0; this._rAcc=st.acc||'sharp';
+          pages.push({el:this.renderSong({...s,sectionPage:pnum}, false, true)});
+          this._rSem=undefined; this._rAcc=undefined;
+        });
+      });
+    } else if(followCel){
+      // Modo "seguir": portada de la celebración + cada canto SOLO LETRA (sin controles).
+      const songById={}; list.forEach(s=>{songById[s.id]=s;});
+      pages.push({el:this.renderFollowCover(followCel.n)});
+      (followCel.s||[]).forEach((sid,si)=>{ const s=songById[sid]; if(!s) return; pages.push({el:this.renderSong({...s,sectionPage:si+1,keySuffix:'-f'+si}, true)}); });
+    } else if(activeCeleb){
       const celSongs=activeCeleb.songs.map(id=>list.find(s=>s.id===id)).filter(Boolean);
       pages.push({el:this.renderCelebrationIndex(activeCeleb,celSongs)});
       celSongs.forEach((s,si)=>{ const st=this.state.songSettings[s.id]||{}; this._rSem=st.sem!==undefined?st.sem:0; this._rAcc=st.acc||'sharp'; pages.push({el:this.renderSong({...s,sectionPage:si+1,keySuffix:'-cel'+si})}); this._rSem=undefined; this._rAcc=undefined; });
@@ -2912,7 +3106,7 @@ class Component extends DCLogic {
     const wrappedPages=pages.map(p=>({el:this.wrapPage(p.el)}));
 
     return {
-      menuVisible:!menuHidden,
+      menuVisible: followCel?false:!menuHidden,
       toggleLabel:menuHidden?'\u25BC Men\u00FA':'\u25B2 Men\u00FA',
       svLabel:sem===0?'0':(sem>0?'+'+sem:''+sem),
       stSharp:tg(acc==='sharp'),stFlat:tg(acc==='flat'),
@@ -2925,6 +3119,10 @@ class Component extends DCLogic {
       fontDown:()=>this._setPref(s=>({scale:Math.max(0.7,+(s.scale-0.07).toFixed(2))})),
 
       toggleMenu:()=>this.setState(s=>({menuHidden:!s.menuHidden})),
+      addBtnEl:null,
+      addModalEl:null,
+      shareModalEl:this.renderShareModal(),
+      toggleFullscreen:()=>{ const d=document, el=d.documentElement; try{ if(!d.fullscreenElement&&!d.webkitFullscreenElement){ const r=el.requestFullscreen||el.webkitRequestFullscreen; if(r){ r.call(el); this.setState({menuHidden:true}); } } else { const x=d.exitFullscreen||d.webkitExitFullscreen; if(x) x.call(d); } }catch(_){} },
       toggleDark:()=>this.toggleDarkMode(),
       setLight:()=>this._setPref({darkMode:'light'}),
       setAuto:()=>this._setPref({darkMode:'auto'}),
