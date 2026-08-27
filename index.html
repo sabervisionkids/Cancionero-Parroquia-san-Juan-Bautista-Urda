@@ -272,6 +272,9 @@ class Component extends DCLogic {
 
   // ── Parser ChordPro ────────────────────────────────────────────
   parseChordLine(line){
+    // Marcadores de repetición entre corchetes ([x2], [bis], [x4]...) NO son acordes:
+    // se convierten en texto "(x2)" para que no se pinten en rojo como un acorde.
+    line=line.replace(/\[\s*(x\s*\d+|bis)\s*\]/gi,(m,g)=>'('+g.replace(/\s+/g,'').toLowerCase()+')');
     const parts=line.split(/(\[[^\]]*\])/);
     const rawSegs=[];let cur=null;
     for(const p of parts){
@@ -577,8 +580,60 @@ class Component extends DCLogic {
       '{end_of_verse}',
       '',
       '{start_of_chorus}',
-      'A[F]mén, a[G]mén, se[C]ñor.',
+      'A[F]mén, a[G]mén, Se[C]ñor.',
       '{end_of_chorus}',
+    ].join('\n') }
+  ,{ id:'gloria-hakuna', chordpro:[
+      '{title: Gloria (Hakuna)}',
+      '{section: Gloria}',
+      '{artist: Hakuna}',
+      '',
+      '{start_of_verse}',
+      '[G]Gloria a Dios en el [D]Cielo',
+      'y en la [F]Tierra paz a los [C]hombres',
+      'que [D]ama el Señor.',
+      '{end_of_verse}',
+      '',
+      '{start_of_verse}',
+      'Por tu in[G]mensa Gloria te ala[D]bamos',
+      'te bende[F]cimos, te ado[C]ramos,',
+      'te [D]glorificamos.',
+      '{end_of_verse}',
+      '',
+      '{start_of_verse}',
+      'Te [C]damos gracias, Se[D]ñor',
+      '[G]Dios Rey celes[Em]tial',
+      'Dios [Am]Padre [F]Todopode[D]roso [D7]',
+      '{end_of_verse}',
+      '',
+      '{start_of_verse}',
+      'Señor [G]Hijo único Jesu[D]cristo',
+      'Señor [F]Dios, Cordero de [C]Dios',
+      '[D]Hijo del Padre',
+      'Tú que [G]quitas el pecado del [D]mundo',
+      'ten pie[Am]dad de no[C]sotros, [D]ten piedad.',
+      '{end_of_verse}',
+      '',
+      '{start_of_verse}',
+      'Tú que [C]quitas el pecado del [D]mundo',
+      'a[G]tiende nuestras [Em]súplicas',
+      'Tú que es[C]tás sentado a la de[D]recha del Padre',
+      'ten pie[G]dad de no[Em]sotros',
+      '{end_of_verse}',
+      '',
+      '{start_of_verse}',
+      'Porque [Am]sólo tú eres [D]Santo',
+      '[G]sólo Tú [Em]Señor',
+      'sólo [Am]Tú Altísimo [D]Jesucristo,',
+      '[G]con el Espíritu [Em]Santo,',
+      'en la [Am]Gloria[F] de Dios Padre, a[D]mén. [D7]',
+      '{end_of_verse}',
+      '',
+      '{start_of_verse}',
+      '[G]Gloria a Dios en el [D]Cielo',
+      'y en la [Am]Tierra paz a los [C]hombres',
+      'que [D]ama el Se[C]ñoo[G]or.',
+      '{end_of_verse}',
     ].join('\n') }
   ,{ id:'convocados', chordpro:[
       '{title: Convocados}',
@@ -1258,7 +1313,7 @@ class Component extends DCLogic {
       '{start_of_chorus}',
       'Todo es [C]tuyo',
       'Todo es [F]tu[C]yo',
-      '[F]Haz lo que [Am]quieras de [G]mi.',
+      '[F]Haz lo que [Am]quieras de [G]mí.',
       'Todo es [C]tuyo',
       'Todo es [F]tu[Am]yo',
       'Je[F]sús yo con[G]fío en [C]Ti',
@@ -1290,7 +1345,7 @@ class Component extends DCLogic {
       '{end_of_verse}',
       '',
       '{start_of_verse: Estrofa 2}',
-      'La tierra, el [C]aire y el sol [G]son tu re[Am]galos,',
+      'La tierra, el [C]aire y el sol [G]son tu re[Am]galo,',
       'y mil es[F]trellas de luz [G]sembró tu [C]mano. [C7]',
       'El hombre [F]pone su amor [G]y su tra[C]bajo [Am]',
       'el hombre [F]pone su amor [G]y su tra[C]bajo. [G]',
@@ -2034,7 +2089,22 @@ class Component extends DCLogic {
         // por el acorde ("ca-ra"), en vez de un hueco que parezca dos palabras distintas.
         const nx=(i+1<out.length)?vis(out[i+1][1]):'';
         const joins=/^[A-Za-z\u00C1\u00C9\u00CD\u00D3\u00DA\u00DC\u00D1\u00E1\u00E9\u00ED\u00F3\u00FA\u00FC\u00F1]/.test(nx);
-        out[i][1]=joins ? (lyric+'-'+'\u00A0'.repeat(Math.max(0,deficit-1))) : (lyric+'\u00A0'.repeat(deficit));
+        if(joins){
+          // Palabra partida por el acorde: un guion SIEMPRE pegado a la s\u00EDlaba, y guiones
+          // EXTRA repartidos por el hueco cuando es grande (2 en huecos medianos, hasta 3 en
+          // muy grandes), como en una maquetaci\u00F3n profesional: "ca-  -  -ra" en vez de "ca-    ra".
+          const cells=new Array(deficit).fill('\u00A0');
+          cells[0]='-';
+          const extra=Math.min(3, Math.floor((deficit-2)/3));
+          for(let k=1;k<=extra;k++){
+            let pos=Math.round(k*deficit/(extra+1));
+            pos=Math.min(deficit-2, Math.max(1,pos));
+            cells[pos]='-';
+          }
+          out[i][1]=lyric+cells.join('');
+        } else {
+          out[i][1]=lyric+'\u00A0'.repeat(deficit);
+        }
       }
     }
     return out;

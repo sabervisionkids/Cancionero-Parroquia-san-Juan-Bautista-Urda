@@ -1,6 +1,6 @@
 /* Cantoral — Service Worker. Cachea toda la app para funcionar SIN internet.
    Sube CACHE_VERSION cuando cambies archivos para forzar actualización. */
-const CACHE = 'cantoral-v12';
+const CACHE = 'cantoral-v14';
 const CORE = [
   "index.html",
   "manifest.json",
