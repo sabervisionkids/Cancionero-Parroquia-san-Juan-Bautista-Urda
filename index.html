@@ -1222,10 +1222,10 @@ class Component extends DCLogic {
       '{end_of_verse}',
       '',
       '{start_of_chorus}',
-      '[Mim]TÓMALO Y ACÉPTA[Re]LO, SEÑOR,',
-      'ES MI CO[Sol]SE[Re]CHA.',
-      '[Mim]TÓMALO, TRANSFÓRMA[Re]LO, SEÑOR,',
-      'EN PURA OFREN[Sol]DA.',
+      '[Mim]Tómalo y acépta[Re]lo, Señor,',
+      'es mi co[Sol]se[Re]cha.',
+      '[Mim]Tómalo, transfórma[Re]lo, Señor,',
+      'en pura ofren[Sol]da.',
       '{end_of_chorus}',
       '',
       '{start_of_verse}',
@@ -1235,12 +1235,12 @@ class Component extends DCLogic {
       'a tu al[Do]tar de amor, mi cora[Sol]zón.',
       '{end_of_verse}',
       '',
-      '{start_of_chorus}',
-      'QUIERO ES[Mim]TAR, SEÑOR, JUNTO A TU [Re]MESA',
-      'Y ENTRE[Do]GAR MI VIDA EN[Sol]TE[Re]RA',
-      'QUIERO ES[Mim]TAR, SEÑOR, EN TU PRE[Re]SENCIA',
-      'Y ENTRE[Do]GAR MI [Re]CORA[Sol]ZÓN',
-      '{end_of_chorus}',
+      '{start_of_verse}',
+      'Quiero es[Mim]tar, Señor, junto a tu [Re]mesa',
+      'y entre[Do]gar mi vida en[Sol]te[Re]ra',
+      'Quiero es[Mim]tar, Señor, en tu pre[Re]sencia',
+      'y entre[Do]gar mi [Re]cora[Sol]zón',
+      '{end_of_verse}',
     ].join('\n') }
   ,{ id:'todo-es-tuyo', chordpro:[
       '{title: Todo es tuyo}',
@@ -2248,7 +2248,7 @@ class Component extends DCLogic {
     const idxTitleFs=Math.round(Math.max(24,Math.min(44,L.pageW*0.048)));
     const gap=28;
     // N\u00BA de columnas FIJO por ancho (nunca crea columnas de m\u00E1s \u2192 no se va de lado).
-    let nCols=Math.max(1,Math.floor((L.availW+gap)/(160+gap)));
+    let nCols=Math.max(1,Math.floor((L.availW+gap)/(150+gap)));
     nCols=Math.min(nCols,3);
     const entryStyle={display:'flex',justifyContent:'space-between',gap:'10px',textDecoration:'none',color:negro,padding:'0.26em 0.1em',borderBottom:'1px dotted rgba(0,0,0,.16)',cursor:'pointer',fontSize:'1em'};
     const makeGroups=(secs)=>secs.map((sec,i)=>R('div',{key:i,style:{marginBottom:'1.1em',breakInside:'avoid'}},
@@ -2262,16 +2262,19 @@ class Component extends DCLogic {
     const makePage=(secs,key,id)=>{
       let units=0; secs.forEach(s=>{ units+=2.4+s.songs.length*1.5; });
       const availIdx=L.pageH-(L.padY+8)*2-Math.round(idxTitleFs*1.6);
-      const baseFs=Math.max(13,Math.min(21,Math.floor(availIdx/(Math.max(1,units/nCols)*1.25))));
+      const baseFs=Math.max(11,Math.min(21,Math.floor(availIdx/(Math.max(1,units/nCols)*1.25))));
       const attrs={key,'data-page':'1','data-indexpage':'1',style:pageStyle}; if(id) attrs.id=id;
       return R('section',attrs,
         titleEl(),
         R('div',{'data-indexcols':'1',style:{flex:'0 0 auto',columnCount:nCols,columnGap:gap+'px',columnFill:'balance',fontSize:baseFs+'px'}},makeGroups(secs))
       );
     };
-    // Dos p\u00E1ginas de \u00EDndice (corte tras "Cordero de Dios"): en una sola no cabe c\u00F3modo.
-    const splitAfter=sections.findIndex(s=>s.name==='Cordero de Dios');
-    const half=splitAfter>=0?splitAfter+1:Math.ceil(sections.length/2);
+    // Dos p\u00E1ginas de \u00EDndice EQUILIBRADAS por cantidad de contenido (unidades ~ 2.4 + n\u00BA cantos*1.5),
+    // para que ninguna se desborde (scroll) ni quede medio vac\u00EDa.
+    const uarr=sections.map(s=>2.4+s.songs.length*1.5);
+    const utot=uarr.reduce((a,b)=>a+b,0);
+    let acc=0, half=1, bestDiff=Infinity;
+    for(let i=1;i<sections.length;i++){ acc+=uarr[i-1]; const d=Math.abs(acc-(utot-acc)); if(d<bestDiff){bestDiff=d;half=i;} }
     return [ makePage(sections.slice(0,half),'indice-1','indice'), makePage(sections.slice(half),'indice-2') ];
   }
 
@@ -2283,17 +2286,20 @@ class Component extends DCLogic {
     const maxLen=Math.max(...words.map(w=>w.length));
     // Tamaño del título: limitado por el ancho de la palabra más larga Y el alto real
     // de la página. Playfair 900: ~0.62em/carácter; lineHeight renderizado: 1.25
-    const bottomBand=Math.round(L.pageH*0.20);        // banda inferior (parroquia + escudo)
+    // Banda inferior calculada según la ALTURA REAL del pie (Parroquia + escudo), para que el
+    // título NUNCA se solape con el pie (antes era un 20% fijo, insuficiente en pantalla grande).
+    const footFs=Math.round(Math.max(14,Math.min(22, L.pageW*0.028)));
+    const escW=Math.round(Math.max(44,Math.min(64, L.pageW*0.08)));
+    const footerH=Math.round(3*footFs*1.9 + 12 + escW);
+    const bottomBand=Math.round(L.pageH*0.05)+footerH+Math.round(L.pageH*0.03);
     const sidePad=Math.round(L.pageW*0.07);
     const byWidth=Math.min(200, Math.floor((L.pageW-sidePad*2)/(maxLen*0.62)));
     const subFs=Math.round(Math.min(72, L.pageW*0.09));
-    const availH=L.pageH-bottomBand-Math.round(L.pageH*0.10);
+    const availH=L.pageH-bottomBand-Math.round(L.pageH*0.05);
     const subH=subtitle?(subFs*1.15+subFs*0.6):0;
     const byHeight=Math.floor((availH-subH)/(words.length*1.45));
     // Sin suelo alto forzado: el título se REDUCE si no cabe, para no solaparse con el pie.
     const fs=Math.max(14, Math.min(byWidth, byHeight));
-    const footFs=Math.round(Math.max(14,Math.min(22, L.pageW*0.028)));
-    const escW=Math.round(Math.max(44,Math.min(64, L.pageW*0.08)));
     return R('section',{key,'data-page':'1',style:{height:'100%',width:'100%',flexShrink:0,scrollSnapAlign:'start',overflow:'hidden',position:'relative',background:'#F5F0E8'}},
       R('div',{style:{position:'absolute',inset:0,backgroundImage:"url('"+(window.__resources&&window.__resources.papelPng||'assets/papel-w.jpg')+"')",backgroundSize:'cover',backgroundPosition:'center',mixBlendMode:'multiply',zIndex:0}}),
       R('div',{style:{position:'absolute',top:0,left:0,right:0,bottom:bottomBand+'px',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',zIndex:1,padding:'0 '+sidePad+'px',textAlign:'center'}},
@@ -2504,7 +2510,7 @@ class Component extends DCLogic {
       while(page.scrollHeight>page.clientHeight+2 && guard<12){
         const cur=parseFloat(idx.style.fontSize)||parseFloat(getComputedStyle(idx).fontSize)||16;
         const nf=Math.floor(cur*0.94);
-        if(nf<13||nf>=cur) break; // suelo legible; si no cabe ni así, se permite scroll vertical
+        if(nf<10||nf>=cur) break; // suelo legible; si no cabe ni así, se permite scroll vertical
         idx.style.fontSize=nf+'px'; guard++;
       }
       return;
@@ -2514,7 +2520,7 @@ class Component extends DCLogic {
     for(const col of cols.children){ if(col.scrollWidth>col.clientWidth+1) ratio=Math.min(ratio, col.clientWidth/col.scrollWidth); }
     if(ratio<0.999){
       const cur=parseFloat(cols.style.fontSize)||parseFloat(getComputedStyle(cols).fontSize)||24;
-      const nf=Math.max(9, Math.floor(cur*ratio));
+      const nf=Math.max(6, Math.floor(cur*ratio));
       if(Math.abs(nf-cur)>=1) cols.style.fontSize=nf+'px';
     }
   }
@@ -2620,8 +2626,10 @@ class Component extends DCLogic {
     const minFont=9;
     // ancho mínimo por columna para que la línea más larga quepa a tamaño legible
     const minColPx=Math.max(150,maxLineEm*minFont);
-    const capByWidth=Math.max(1,Math.floor((L.availW+L.gap)/(minColPx+L.gap)));
-    const cap=Math.max(1,Math.min(4,capByWidth,blocks.length));
+    // No limitamos por "ancho mínimo legible": permitimos hasta 4 columnas (o nº de bloques) y
+    // dejamos que el bucle elija la que da MAYOR tamaño de fuente (fitFs). En cantos largos de
+    // móvil, 2 columnas dan letra más grande que 1 aunque las líneas sean largas.
+    const cap=Math.max(1,Math.min(4,blocks.length));
     // Se PREFIERE la MENOR cantidad de columnas: se usa 1 salvo que la letra quede pequeña.
     // Solo se añaden columnas cuando con menos no se alcanza un tamaño cómodo de lectura.
     const target = L.pageW>=700 ? 17 : 14;
