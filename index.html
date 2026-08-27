@@ -2697,17 +2697,21 @@ class Component extends DCLogic {
     // Se PREFIERE la MENOR cantidad de columnas: se usa 1 salvo que la letra quede pequeña.
     // Solo se añaden columnas cuando con menos no se alcanza un tamaño cómodo de lectura.
     const target = L.pageW>=700 ? 17 : 14;
-    let bestN=1, bestFs=-1;
+    let bestN=1, bestFs=-1; const fsArr=[];
     for(let n=1;n<=cap;n++){
       const colW=(L.availW-(n-1)*L.gap)/n;
       const fontW=colW/maxLineEm;
       const maxColEms=Math.max(...this.splitColumns(blocks,n).map(g=>this.blockEms(g)))||1;
       const fontH=L.availH/maxColEms;
       const fs=Math.min(fontH,fontW);
+      fsArr[n]=fs;
       if(fs>bestFs){ bestFs=fs; bestN=n; }
       if(fs>=target) return n; // el MENOR nº de columnas que alcanza el tamaño cómodo
     }
-    return bestN; // si ninguno lo alcanza (canto largo), el de mayor fuente
+    // Ninguno alcanza el "target": se PREFIERE menos columnas — el MENOR nº cuyo tamaño esté
+    // dentro del 90% del mejor (no se añade una columna por una mejora mínima, p.ej. Jesús amigo).
+    for(let n=1;n<=cap;n++){ if(fsArr[n]>=bestFs*0.90) return n; }
+    return bestN;
   }
 
   // ── Layout responsive ──────────────────────────────────────────
@@ -2767,8 +2771,9 @@ class Component extends DCLogic {
       const m=raw.match(/^(\d+(?:\.\d+)?)ch/);
       w += m?parseFloat(m[1])*0.5:Math.round(raw.replace(/ /g,' ').replace(/\s+$/,'').length*0.72)*0.5;
     }
-    for(let i=0;i<line.length;i++){
-      const seg=line[i];
+    const segs=(line[0] && String(line[0][1]||'').startsWith('>>')) ? line : this._padSegments(line);
+    for(let i=0;i<segs.length;i++){
+      const seg=segs[i];
       const chord=seg[0]?this.trans(seg[0]):'';
       let lyric=String(seg[1]||'').replace(/ /g,' ');
       if(lyric.startsWith('>>')) lyric=lyric.slice(2).replace(/^(\d+(?:\.\d+)?)ch\s*/,'');
