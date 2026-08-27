@@ -2289,7 +2289,7 @@ class Component extends DCLogic {
     const subFs=Math.round(Math.min(72, L.pageW*0.09));
     const availH=L.pageH-bottomBand-Math.round(L.pageH*0.10);
     const subH=subtitle?(subFs*1.15+subFs*0.6):0;
-    const byHeight=Math.floor((availH-subH)/(words.length*1.32));
+    const byHeight=Math.floor((availH-subH)/(words.length*1.45));
     // Sin suelo alto forzado: el título se REDUCE si no cabe, para no solaparse con el pie.
     const fs=Math.max(14, Math.min(byWidth, byHeight));
     const footFs=Math.round(Math.max(14,Math.min(22, L.pageW*0.028)));
@@ -2297,7 +2297,7 @@ class Component extends DCLogic {
     return R('section',{key,'data-page':'1',style:{height:'100%',width:'100%',flexShrink:0,scrollSnapAlign:'start',overflow:'hidden',position:'relative',background:'#F5F0E8'}},
       R('div',{style:{position:'absolute',inset:0,backgroundImage:"url('"+(window.__resources&&window.__resources.papelPng||'assets/papel-w.jpg')+"')",backgroundSize:'cover',backgroundPosition:'center',mixBlendMode:'multiply',zIndex:0}}),
       R('div',{style:{position:'absolute',top:0,left:0,right:0,bottom:bottomBand+'px',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',zIndex:1,padding:'0 '+sidePad+'px',textAlign:'center'}},
-        ...words.map((w,i)=>R('div',{key:i,style:{fontFamily:"'Playfair Display',serif",fontWeight:900,fontSize:fs+'px',color:'#000',lineHeight:1.25,letterSpacing:'-2px',textAlign:'center',whiteSpace:'nowrap',hyphens:'none'}},(w))),
+        ...words.map((w,i)=>R('div',{key:i,style:{fontFamily:"'Playfair Display',serif",fontWeight:900,fontSize:fs+'px',color:'#000',lineHeight:1.4,letterSpacing:'-2px',textAlign:'center',whiteSpace:'nowrap',hyphens:'none'}},(w))),
         subtitle?R('div',{style:{fontFamily:"'Playfair Display',serif",fontStyle:'italic',fontWeight:700,fontSize:subFs+'px',color:'#000',lineHeight:1.1,textAlign:'center',marginTop:'0.55em',letterSpacing:'-1px'}},subtitle):null
       ),
       R('div',{style:{position:'absolute',bottom:Math.round(L.pageH*0.05)+'px',left:0,right:0,textAlign:'center',zIndex:1}},
@@ -2617,7 +2617,7 @@ class Component extends DCLogic {
     const L=this._L||this._computeLayout();
     if(blocks.length<=1) return 1;
     const maxLineEm=this._maxLineEm(blocks)||1;
-    const minFont=12;
+    const minFont=9;
     // ancho mínimo por columna para que la línea más larga quepa a tamaño legible
     const minColPx=Math.max(150,maxLineEm*minFont);
     const capByWidth=Math.max(1,Math.floor((L.availW+L.gap)/(minColPx+L.gap)));
@@ -2734,7 +2734,10 @@ class Component extends DCLogic {
     const fitFs=Math.min(fontH,fontW);
     let fs=fitFs*sc;
     fs=Math.min(fs, fontW, maxFs);
-    fs=Math.max(fs, minFs);
+    // El suelo de legibilidad NUNCA debe forzar desborde: si el canto no cabe ni a minFs
+    // (canto muy largo en móvil), se respeta fitFs (más pequeño) para NO tener que hacer
+    // scroll — regla del usuario: un cancionero para tocar no se desplaza.
+    fs=Math.max(fs, Math.min(minFs, fitFs));
     return Math.round(fs);
   }
 
