@@ -30,7 +30,8 @@
 
 <style>
 *{box-sizing:border-box}html,body{margin:0;padding:0;height:100%;width:100%;overflow:hidden;-webkit-text-size-adjust:100%;}
-[data-scroll]{-webkit-overflow-scrolling:touch; scroll-snap-type:y mandatory; scroll-padding:0;}
+[data-scroll]{ scroll-snap-type:y mandatory; scroll-padding:0; overscroll-behavior-y:contain; }
+:root[data-print="1"] [data-scroll]{ scroll-snap-type:none!important; }
 [data-page]{flex-shrink:0;}
 
 /* ── Barra de herramientas: ocultar scrollbar y adaptarse en pantallas pequeñas ── */
@@ -204,22 +205,56 @@ class Component extends DCLogic {
     );
   }
 
-  // Genera el cantoral en A4 para imprimir / guardar como PDF (solo títulos, acordes,
-  // sección arriba-derecha y origen+página abajo). Abre el diálogo de impresión del navegador.
-  printCantoral(){
-    this.setState({printMode:true, menuHidden:true, celListOpen:false, celDetailId:null}, ()=>{
-      setTimeout(()=>{
-        try{
-          const sc=document.querySelector('[data-scroll]');
-          if(sc){
-            const ps=sc.querySelectorAll(':scope > [data-page]');
-            ps.forEach(p=>{ p.style.contentVisibility='visible'; });
-            ps.forEach(p=>this._correctPage(p)); // ajustar la letra de TODAS las páginas antes de imprimir
-          }
-        }catch(_){}
-        setTimeout(()=>{ try{ window.print(); }catch(_){}; setTimeout(()=>this.setState({printMode:false}),700); }, 250);
-      }, 450);
+  // Genera el cantoral en PDF A4 a sangre completa (SIN márgenes), capturando cada página tal
+  // cual se ve (html2canvas) y montándola en un A4 exacto (jsPDF). NO pasa por el diálogo de
+  // impresión del navegador, así que NO hay márgenes de impresora: una página web = una página PDF.
+  async printCantoral(){
+    const loadScript=(src)=>new Promise((res,rej)=>{
+      if(window.__pdflibs&&window.__pdflibs[src]) return res();
+      const s=document.createElement('script'); s.src=src;
+      s.onload=()=>{ (window.__pdflibs=window.__pdflibs||{})[src]=1; res(); };
+      s.onerror=()=>rej(new Error('No se pudo cargar '+src));
+      document.head.appendChild(s);
     });
+    const ov=document.createElement('div');
+    ov.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(20,15,15,.86);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-family:system-ui,sans-serif;text-align:center;padding:24px;';
+    ov.innerHTML='<div style="font-size:22px;font-weight:700">Generando PDF…</div><div data-msg style="font-size:16px;opacity:.85">Preparando…</div><div style="font-size:13px;opacity:.6;max-width:340px">Puede tardar un poco (una página por canto). No cierres la app.</div>';
+    document.body.appendChild(ov);
+    const msg=(t)=>{ const m=ov.querySelector('[data-msg]'); if(m) m.textContent=t; };
+    try{
+      await new Promise(res=>this.setState({printMode:true,menuHidden:true,celListOpen:false,celDetailId:null},res));
+      await new Promise(r=>setTimeout(r,500));
+      try{ if(document.fonts&&document.fonts.ready) await document.fonts.ready; }catch(_){}
+      const sc=document.querySelector('[data-scroll]');
+      const pages=sc?Array.prototype.slice.call(sc.querySelectorAll(':scope > [data-page]')):[];
+      pages.forEach(p=>{ p.style.contentVisibility='visible'; });
+      pages.forEach(p=>this._correctPage(p));
+      await new Promise(r=>setTimeout(r,300));
+      if(!pages.length) throw new Error('No hay páginas que exportar');
+      msg('Cargando generador…');
+      await loadScript('vendor/html2canvas.min.js');
+      await loadScript('vendor/jspdf.umd.min.js');
+      const H=window.html2canvas, JS=(window.jspdf&&window.jspdf.jsPDF)||window.jsPDF;
+      if(!H||!JS) throw new Error('No se pudieron cargar las librerías del PDF');
+      const doc=new JS({unit:'mm',format:'a4',orientation:'portrait',compress:true});
+      for(let i=0;i<pages.length;i++){
+        msg('Página '+(i+1)+' de '+pages.length);
+        const canvas=await H(pages[i],{scale:2,useCORS:true,backgroundColor:'#F5F0E8',logging:false,width:794,height:1123,windowWidth:794,windowHeight:1123,scrollX:0,scrollY:0});
+        const img=canvas.toDataURL('image/jpeg',0.92);
+        if(i>0) doc.addPage();
+        doc.addImage(img,'JPEG',0,0,210,297,undefined,'FAST');
+        canvas.width=0; canvas.height=0;
+        await new Promise(r=>setTimeout(r,0));
+      }
+      msg('Guardando…');
+      doc.save('Cantoral - Parroquia San Juan Bautista, Urda.pdf');
+    }catch(e){
+      console.error('PDF error',e);
+      try{ alert('No se pudo generar el PDF: '+((e&&e.message)||e)); }catch(_){}
+    }finally{
+      try{ ov.remove(); }catch(_){}
+      this.setState({printMode:false});
+    }
   }
 
   // ── Transposición ──────────────────────────────────────────────
