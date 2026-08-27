@@ -1787,9 +1787,9 @@ class Component extends DCLogic {
       '{columns: 1}',
       '',
       '{start_of_chorus}',
-      '[C]Dios [G]está a[Am]quí,',
-      'tan [F]cierto como el [G]aire que res[C]piro, [Am]',
-      '[F]tan cierto como la ma[G]ñana se le[C]va[Em]n[Am]ta,',
+      '[C]Dios es[G]tá a[Am]quí,',
+      'tan [F]cierto como el aire [G]que res[C]piro, [Am]',
+      'tan [F]cierto como la ma[G]ñana se le[C]va[Em]n[Am]ta,',
       'tan [F]cierto como que este [G]canto lo puedes o[C]ír.',
       '{end_of_chorus}',
       '',
@@ -2051,7 +2051,8 @@ class Component extends DCLogic {
       if(!chord) continue;
       const chordW=this.trans(chord).length*RATIO;
       const lyricW=vis(lyric).length;
-      const deficit=Math.ceil(chordW-lyricW);
+      const nextChord=(i+1<out.length)&&out[i+1][0]; // hueco mínimo si el siguiente también lleva acorde
+      const deficit=Math.ceil((nextChord?chordW+0.6:chordW)-lyricW);
       if(deficit<=0) continue;
       const lv=vis(lyric);
       // \u00BFLa s\u00EDlaba termina en l\u00EDmite de palabra? Entonces solo se a\u00F1ade espacio (NBSP)
@@ -2071,7 +2072,7 @@ class Component extends DCLogic {
           // muy grandes), como en una maquetaci\u00F3n profesional: "ca-  -  -ra" en vez de "ca-    ra".
           const cells=new Array(deficit).fill('\u00A0');
           cells[0]='-';
-          const extra=Math.min(3, Math.floor((deficit-2)/3));
+          const extra=Math.min(3, Math.floor((deficit-1)/3));
           for(let k=1;k<=extra;k++){
             let pos=Math.round(k*deficit/(extra+1));
             pos=Math.min(deficit-2, Math.max(1,pos));
@@ -2580,6 +2581,23 @@ class Component extends DCLogic {
       this._correctPage(w);
     });
   }
+
+  // Enganche de página por JS: al terminar de deslizar, ajusta suavemente a la página más
+  // cercana. Fiable en móvil (donde el CSS scroll-snap a veces no engancha) y en PC.
+  _snapToNearest(){
+    if(this.state.printMode) return;
+    const c=document.querySelector('[data-scroll]'); if(!c||this._snapping) return;
+    const pages=Array.prototype.slice.call(c.querySelectorAll(':scope > [data-page]'));
+    if(pages.length<2) return;
+    const y=c.scrollTop, h=c.clientHeight;
+    let best=null,bestD=Infinity;
+    for(const p of pages){ const d=Math.abs(p.offsetTop-y); if(d<bestD){bestD=d;best=p;} }
+    if(best && bestD>3 && bestD<h){
+      this._snapping=true;
+      try{ c.scrollTo({top:best.offsetTop,behavior:'smooth'}); }catch(_){ c.scrollTop=best.offsetTop; }
+      setTimeout(()=>{ this._snapping=false; }, 450);
+    }
+  }
   // IntersectionObserver: corrige cada canto EXACTAMENTE cuando aparece (por scroll,
   // índice o celebración), tras el layout. Es la garantía última de que nada se sale.
   _observePages(){
@@ -2781,7 +2799,9 @@ class Component extends DCLogic {
     const fontW=maxLineEm>0?(colW/maxLineEm)*0.93:Infinity;
     const sc=(songScale||1);
     const minFs=9;
-    const maxFs=44;
+    // En impresión/PDF topamos la fuente para que los cantos cortos no salgan enormes:
+    // así todas las páginas quedan uniformes (los largos se reducen para caber).
+    const maxFs=this._printMode?26:44;
     // Tamaño base = el mayor que hace caber el canto ENTERO en una página (fitFs). La escala
     // del usuario (botones Texto +/–) parte de ahí: puede AGRANDAR (aceptando algo de scroll
     // si se pasa) o reducir. El ANCHO es tope DURO: nunca se recorta una palabra.
@@ -2957,7 +2977,11 @@ class Component extends DCLogic {
     window.addEventListener('resize',this._onResize);
     try{ if(window.visualViewport) window.visualViewport.addEventListener('resize',this._onResize); }catch(_){}
     // Al hacer scroll, corregir el ajuste de los cantos que se aproximan (debounced).
-    this._onScroll=()=>{ if(this._scrollT) return; this._scrollT=setTimeout(()=>{ this._scrollT=null; this._correctVisibleFits(); },80); };
+    this._onScroll=()=>{
+      if(!this._scrollT) this._scrollT=setTimeout(()=>{ this._scrollT=null; this._correctVisibleFits(); },80);
+      // Enganche por JS: al parar de deslizar, ajusta a la página más cercana (móvil y PC).
+      clearTimeout(this._snapT); this._snapT=setTimeout(()=>this._snapToNearest(),150);
+    };
     const _sc=document.querySelector('[data-scroll]'); if(_sc) _sc.addEventListener('scroll',this._onScroll,{passive:true});
     this.applyPageScale(); // síncrono al montar: evita el parpadeo inicial (páginas al fallback 794px)
     this.scheduleFit();
@@ -3004,16 +3028,19 @@ class Component extends DCLogic {
     const {celActiveId,celebrations}=this.state;
     const activeCeleb=celActiveId?celebrations.find(c=>c.id===celActiveId):null;
     if(this.state.printMode){
-      // Impresión A4: TODOS los cantos en orden (por sección y título), con acordes,
-      // sección arriba-derecha y origen+nº de página abajo. Sin controles ni índice.
+      // PDF A4: portada + índice + portada de cada sección + cada canto (una página por canto),
+      // con acordes, sección arriba-derecha y origen+nº de página abajo. Sin controles.
       const bySectionP={};
       list.forEach(s=>{if(!bySectionP[s.section])bySectionP[s.section]=[];bySectionP[s.section].push(s);});
-      let pnum=0;
-      this.sectionDefs().forEach((def)=>{
-        (bySectionP[def.name]||[]).forEach((s)=>{
-          pnum++;
+      pages.push({el:this.renderCover()});
+      pages.push({el:this.renderIndex(sections)});
+      this.sectionDefs().forEach((def,i)=>{
+        const secSongs=bySectionP[def.name]||[];
+        if(!secSongs.length) return;
+        pages.push({el:this.renderSection(def.name,def.subtitle,'psec'+i)});
+        secSongs.forEach((s,si)=>{
           const st=this.state.songSettings[s.id]||{}; this._rSem=st.sem!==undefined?st.sem:0; this._rAcc=st.acc||'sharp';
-          pages.push({el:this.renderSong({...s,sectionPage:pnum}, false, true)});
+          pages.push({el:this.renderSong({...s,sectionPage:si+1}, false, true)});
           this._rSem=undefined; this._rAcc=undefined;
         });
       });
