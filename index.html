@@ -1127,9 +1127,9 @@ class Component extends DCLogic {
       '',
       '{start_of_chorus}',
       'Ho[G]sanna en el [C]Cielo',
-      '>>10.7ch(Santo es el Se[G]ñor)',
+      '>>13.2ch(Santo es el Se[G]ñor)',
       'Ho[G]sanna en el [C]Cielo',
-      '>>10.7ch(Santo es el Se[G]ñor)',
+      '>>13.2ch(Santo es el Se[G]ñor)',
       '{end_of_chorus}',
     ].join('\n') }
   ,{ id:'bendito-seas-por-siempre', chordpro:[
@@ -2098,9 +2098,45 @@ class Component extends DCLogic {
     return out;
   }
 
+  // Línea principal + su ECO (segunda voz). El eco va PEGADO debajo, sin fila de acordes
+  // propia: su(s) acorde(s) se colocan ARRIBA, en la misma fila de acordes de la línea
+  // principal, sobre la sílaba correspondiente del eco (p.ej. "Santo (Hakuna)": la G del
+  // eco cae sobre "ñor", en la fila de "Hosanna en el Cielo").
+  renderEchoPair(mainLine, echoLine, key, isChorus, hideChords){
+    const R=React.createElement,rojo='#8B1A1A',negro='#1a1a1a';
+    const mainEl=this.renderLine(mainLine,key+'m',isChorus,undefined,hideChords);
+    const first=String((echoLine[0]&&echoLine[0][1])||'');
+    const raw=first.slice(2);
+    const explicit=raw.match(/^(\d+(?:\.\d+)?)ch\s*/);
+    let paddingCh=0, visSegs;
+    if(explicit){ paddingCh=parseFloat(explicit[1]); const rem=raw.slice(explicit[0].length); visSegs = rem!=='' ? [[echoLine[0][0],rem]].concat(echoLine.slice(1)) : echoLine.slice(1); }
+    else { paddingCh=Math.round(raw.replace(/ /g,' ').length*0.72); visSegs=echoLine.slice(1); }
+    const z=this._measEm('0')||0.5;
+    const measCh=(t)=>this._measEm(String(t||''))/z;
+    // Texto del eco (sin acordes inline → sin fila extra que separe del verso principal)
+    const echoText=visSegs.map((s,i)=>R('span',{key:i}, String(s[1]||'')));
+    const echoRow=R('div',{key:key+'e',style:{color:negro,whiteSpace:'nowrap',paddingLeft:paddingCh+'ch',lineHeight:'1.45',letterSpacing:'0.02em',marginTop:'-0.34em'}}, echoText);
+    // Acorde(s) del eco, absolutos, en la fila de acordes principal (top:0 del contenedor)
+    const echoChords=[]; let cum='';
+    visSegs.forEach((s,i)=>{
+      if(s[0] && !hideChords){
+        echoChords.push(R('span',{key:'ec'+i,style:{position:'absolute',top:0,left:(paddingCh+measCh(cum))+'ch',color:rojo,fontWeight:700,fontSize:'0.82em',lineHeight:'1.15',whiteSpace:'nowrap'}}, this.trans(s[0])));
+      }
+      cum+=String(s[1]||'');
+    });
+    return R('div',{key,style:{position:'relative',marginBottom:'0.5em',whiteSpace:'nowrap'}}, mainEl, echoRow, ...echoChords);
+  }
+
   renderBlock(b,key,hideChords){
     const R=React.createElement,{gris,negro}=this.pal();
-    const lines=b.lines.map((ln,j)=>this.renderLine(ln,'ln'+j,b.isChorus,undefined,hideChords));
+    const lines=[];
+    for(let j=0;j<b.lines.length;j++){
+      const ln=b.lines[j], nx=b.lines[j+1];
+      const nxEcho=nx && nx[0] && String(nx[0][1]||'').startsWith('>>');
+      const lnEcho=ln && ln[0] && String(ln[0][1]||'').startsWith('>>');
+      if(nxEcho && !lnEcho){ lines.push(this.renderEchoPair(ln,nx,'lp'+j,b.isChorus,hideChords)); j++; }
+      else lines.push(this.renderLine(ln,'ln'+j,b.isChorus,undefined,hideChords));
+    }
     return R('div',{key,style:{marginBottom:'1.4em',breakInside:'avoid',breakBefore:'avoid'}},...lines);
   }
 
