@@ -110,7 +110,9 @@ button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid 
       </div>
       </sc-if>
       <button onClick="{{ printCantoral }}" title="Cantoral en PDF A4 (imprimir/guardar)" style="background:rgba(0,0,0,.22);border:none;color:#fff;border-radius:7px;padding:3px 9px;font-size:11px;line-height:1;cursor:pointer;flex-shrink:0;font-family:'EB Garamond',serif;font-weight:700;letter-spacing:.5px;">PDF</button>
+      <sc-if value="{{ fsSupported }}" hint-placeholder-val="{{ true }}">
       <button onClick="{{ toggleFullscreen }}" title="Pantalla completa" style="background:rgba(0,0,0,.22);border:none;color:#fff;border-radius:7px;padding:3px 9px;font-size:15px;line-height:1;cursor:pointer;flex-shrink:0;">⛶</button>
+      </sc-if>
     </div>
   </sc-if>
   <sc-if value="{{ inCelebration }}" hint-placeholder-val="{{ false }}">
@@ -2043,17 +2045,24 @@ class Component extends DCLogic {
   }
 
   _padSegments(segs){
-    const RATIO=0.94;
+    // Anchos medidos de VERDAD en "em" (canvas), NO por nº de caracteres: acorde (0.82em,
+    // negrita) y letra tienen anchos muy distintos y el relleno usa NBSP (~0.25em). Medir en
+    // em y convertir a nº de NBSP evita que acordes anchos (Am, Bm, D7...) queden pegados.
+    const CH=0.82*1.06;
+    const nbsp=this._measEm('\u00A0')||0.25;
     const vis=s=>String(s||'').replace(/\u00A0/g,' ');
     const out=segs.map(s=>[s[0],String(s[1]||'')]);
     for(let i=0;i<out.length;i++){
       const [chord,lyric]=out[i];
       if(!chord) continue;
-      const chordW=this.trans(chord).length*RATIO;
-      const lyricW=vis(lyric).length;
-      const nextChord=(i+1<out.length)&&out[i+1][0]; // hueco mínimo si el siguiente también lleva acorde
-      const deficit=Math.ceil((nextChord?chordW+0.6:chordW)-lyricW);
-      if(deficit<=0) continue;
+      const _lv0=vis(lyric);
+      const chordW=this._measEm(this.trans(chord))*CH;
+      const lyricW=this._measEm(_lv0||'');
+      const nextChord=(i+1<out.length)&&out[i+1][0];
+      const gap=nextChord?0.5:0.14;
+      const deficitEm=(chordW+gap)-lyricW;
+      if(deficitEm<=0.02) continue;
+      const deficit=Math.max(1,Math.round(deficitEm/nbsp));
       const lv=vis(lyric);
       // \u00BFLa s\u00EDlaba termina en l\u00EDmite de palabra? Entonces solo se a\u00F1ade espacio (NBSP)
       // entre palabras. Si es MITAD de palabra, se separa con GUI\u00D3N "-" (p.ej. "ca-ra"),
@@ -2072,7 +2081,9 @@ class Component extends DCLogic {
           // muy grandes), como en una maquetaci\u00F3n profesional: "ca-  -  -ra" en vez de "ca-    ra".
           const cells=new Array(deficit).fill('\u00A0');
           cells[0]='-';
-          const extra=Math.min(3, Math.floor((deficit-1)/3));
+          // Gui\u00F3n(es) EXTRA solo cuando el hueco es F\u00CDSICAMENTE grande (en em), no por n\u00BA de
+          // NBSP: 1 gui\u00F3n hasta ~1.5em, 2 hasta ~3em, 3 m\u00E1s all\u00E1. Evita "a- - ma" en huecos cortos.
+          const extra=Math.min(3, Math.floor(deficitEm/1.5));
           for(let k=1;k<=extra;k++){
             let pos=Math.round(k*deficit/(extra+1));
             pos=Math.min(deficit-2, Math.max(1,pos));
@@ -2297,11 +2308,11 @@ class Component extends DCLogic {
     // N\u00BA de columnas FIJO por ancho (nunca crea columnas de m\u00E1s \u2192 no se va de lado).
     let nCols=Math.max(1,Math.floor((L.availW+gap)/(150+gap)));
     nCols=Math.min(nCols,3);
-    const entryStyle={display:'flex',justifyContent:'space-between',gap:'10px',textDecoration:'none',color:negro,padding:'0.26em 0.1em',borderBottom:'1px dotted rgba(0,0,0,.16)',cursor:'pointer',fontSize:'1em'};
+    const entryStyle={display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:'10px',textDecoration:'none',color:negro,padding:'0.26em 0.1em',borderBottom:'1px dotted rgba(0,0,0,.16)',cursor:'pointer',fontSize:'1em'};
     const makeGroups=(secs)=>secs.map((sec,i)=>R('div',{key:i,style:{marginBottom:'1.1em',breakInside:'avoid'}},
       R('div',{style:{fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:'1.35em',letterSpacing:'.3px',color:rojo,marginBottom:'0.3em',borderBottom:'2px solid rgba(139,26,26,.45)',paddingBottom:'0.12em'}},sec.name),
       sec.songs.map((s,j)=>R('a',{key:j,onClick:(e)=>{e.preventDefault();this.goTo(s.id);},style:entryStyle},
-        R('span',{style:{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',minWidth:0}},s.title),
+        R('span',{style:{minWidth:0,lineHeight:1.22,overflowWrap:'anywhere'}},s.title),
         R('span',{style:{color:rojo,fontWeight:700,flexShrink:0}},String(s.sectionPage||''))))
     ));
     const pageStyle={overflowY:'auto',overflowX:'hidden',background:bg,display:'flex',flexDirection:'column',padding:(L.padY+8)+'px '+L.padX+'px'};
@@ -2402,7 +2413,7 @@ class Component extends DCLogic {
       R('span',{},song.section)
     );
     const ytUrl=song.youtube||this.youtubeLinks()[song.id]||'';
-    const titleRow=R('div',{style:{display:'flex',alignItems:'center',justifyContent:'center',gap:'10px',marginTop:'10px',marginBottom:'18px',flexWrap:'wrap',flex:'0 0 auto'}},
+    const titleRow=R('div',{style:{display:'flex',alignItems:'center',justifyContent:'center',gap:'10px',marginTop:printMode?'16px':'10px',marginBottom:printMode?'32px':'18px',flexWrap:'wrap',flex:'0 0 auto'}},
       R('div',{style:{fontFamily:"'Amaranth',sans-serif",fontStyle:'italic',fontWeight:700,fontSize:L.titleFs+'px',color:rojo,textAlign:'center',lineHeight:1.05}},song.title),
       (followMode||printMode)?null:this.ytIcon(song,ytUrl)
     );
@@ -2722,7 +2733,7 @@ class Component extends DCLogic {
       // Impresión: página A4 fija (794×1123 px a 96 dpi = 210×297 mm). Sin cejilla/tono
       // (no van en papel), así que el "cromo" ocupa menos y el texto aprovecha más.
       const pageW=794, pageH=1123, padX=48, padY=42, titleFs=38, gap=26;
-      const chromeH=padY+42/*pie*/+16/*topbar*/+Math.round(titleFs*1.1)+22/*título*/+8;
+      const chromeH=padY+42/*pie*/+16/*topbar*/+Math.round(titleFs*1.1)+48/*título+aire*/+8;
       const availH=Math.max(140,pageH-chromeH);
       const availW=pageW-padX*2;
       this._L={vw:pageW,vh:pageH,pageW,pageH,padX,padY,titleFs,gap,availH,availW};
@@ -2806,7 +2817,7 @@ class Component extends DCLogic {
     const minFs=9;
     // En impresión/PDF topamos la fuente para que los cantos cortos no salgan enormes:
     // así todas las páginas quedan uniformes (los largos se reducen para caber).
-    const maxFs=this._printMode?26:44;
+    const maxFs=this._printMode?20:44;
     // Tamaño base = el mayor que hace caber el canto ENTERO en una página (fitFs). La escala
     // del usuario (botones Texto +/–) parte de ahí: puede AGRANDAR (aceptando algo de scroll
     // si se pasa) o reducir. El ANCHO es tope DURO: nunca se recorta una palabra.
@@ -3113,6 +3124,7 @@ class Component extends DCLogic {
       goCelList:()=>this.setState({celListOpen:true,celDetailId:null}),
       inCelebration:!!this.state.celActiveId,
       notInCelebration:!this.state.celActiveId,
+      fsSupported:!!(document.fullscreenEnabled||document.webkitFullscreenEnabled||document.documentElement.webkitRequestFullscreen),
       celName:this.state.celActiveId?(this.state.celebrations.find(c=>c.id===this.state.celActiveId)||{}).name||'':'',
       exitCelebration:()=>this.cel_exitMode(),
       toggleWakeLock:()=>this.toggleWakeLock(),
