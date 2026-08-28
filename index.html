@@ -338,7 +338,7 @@ class Component extends DCLogic {
 
   parseChordPro(raw){
     const lines=raw.trim().split('\n');
-    const res={title:'',section:'',meta:'',artist:'',number:0,columns:0,youtube:'',blocks:[]};
+    const res={title:'',section:'',meta:'',artist:'',number:0,columns:0,youtube:'',chordDiagrams:[],blocks:[]};
     let block=null,seenTitle=false,pendingBreak=false;
     const flush=()=>{ if(block&&block.lines.length) res.blocks.push(block); block=null; };
     for(const rawLine of lines){
@@ -353,6 +353,7 @@ class Component extends DCLogic {
         else if(k==='capo'||k==='cejilla') res.meta=v?('Cejilla original: '+v):'';
         else if(k==='columns') res.columns=parseInt(v)||0;
         else if(k==='youtube') res.youtube=v;
+        else if(k==='chords'||k==='diagramas'){ res.chordDiagrams=v.split('|').map(part=>{ const t=part.trim().split(/\s+/); const nm=t.shift(); const fr=t.slice(0,6).map(x=>/^x$/i.test(x)?-1:parseInt(x,10)); return (nm&&fr.length===6&&fr.every(n=>!isNaN(n)))?{name:nm,frets:fr}:null; }).filter(Boolean); }
         else if(k==='artist'||k==='autor'||k==='author'||k==='subtitle') res.artist=v;
         else if(k==='column_break'||k==='colbreak'||k==='new_column'){ pendingBreak=true; }
         else if(k==='start_of_chorus'){ flush(); block={type:'lines',isChorus:true,label:'',lines:[],colBreak:pendingBreak}; pendingBreak=false; }
@@ -750,33 +751,45 @@ class Component extends DCLogic {
       '{section: Cantos de ofertorio}',
       '{artist: Autor por confirmar}',
       '{columns: 1}',
+      '',
       '{start_of_verse: Estrofa 1}',
-      '[G]Con lo que [D]soy, [Em]vengo ante [Bm]ti, mi [C]vida está en tus [D]manos: tóma[G]la [D]',
-      '[G]Tú sabes [D]bien, [Em]Señor que [Bm]soy obs[C]táculo en tu obra, sin [Am]méritos ni [D]fuerzas.',
-      'Pero [G]Tú me has querido a[Bm]sociar[C] por a[D]mor a tu la[G7]bor,',
-      'y te[C]nerme siem[D]pre junto a [Bm]ti, siem[E]pre juntos Tú y [Am]yo, Se[D]ñor. [Am] [D]',
+      '[G]Con lo que [D]soy, [Em] vengo an[Bm]te ti,',
+      'mi [C]vida está en tus [D]manos, tóma[G]la. [D]',
+      '[G]Tú sabes [D]bien, [Em] Señor [Bm]que soy,',
+      'obs[C]táculo en tu obra sin [Am]méritos ni [D]fuerzas.',
+      '{end_of_verse}',
+      '',
+      '{start_of_verse}',
+      'Pero [G]Tú, me has querido aso[Bm]ciar, [C]',
+      'por a[D]mor a tu la[G7]bor,',
+      'y te[C]nerme [D]siempre junto a [Bm]ti,',
+      'siem[E]pre juntos Tú y [Am]yo, Se[D]ñor. [Am] [D]',
       '{end_of_verse}',
       '',
       '{start_of_chorus}',
-      '[G]Yo quiero [D]ser tu servi[C]dor. [G]Yo quiero [D]ser tu servi[C]dor,',
-      'Es[Bm]clavo que no [C]sabe lo que ha[G]cer sin su Se[D]ñor.',
-      '[G]Yo quiero [D]ser tu servi[C]dor[D], vi[G]vir tan [D]sólo de tu a[C]mor,',
-      'Sen[Bm]tir la sed de [C]almas... [Am]que me infunde tu ca[D]lor.',
+      '[G]Yo quiero [D]ser tu servi[C]do[D]r,',
+      '[G]Yo quiero [D]ser tu servi[C]dor,',
+      'es[B]clavo que no [C]sabe lo que ha[G]cer sin su S[D]eñor.',
+      '[G]Yo quiero [D]ser tu servi[C]do[D]r,',
+      'vi[G]vir tan [D]sólo de tu A[C]mor,',
+      'sen[Bm]tir la sed de [C]almas… [Am]',
+      'que me infunde tu ca[D]lor.',
       '{end_of_chorus}',
       '',
       '{start_of_verse: Estrofa 2}',
-      '[G]Quieres con[D]tar [Em]con mi [Bm]labor pu[C]diéndolo Tú [D]todo y nada [G]yo [D]',
-      '[G]Mira, Se[D]ñor, [Em]mi co[Bm]razón y en[C]ciende en él el fuego que [Am]nace en su pre[D]sencia.',
-      'Pero [G]Tú me has querido a[Bm]sociar[C] por a[D]mor a tu la[G7]bor,',
-      'y te[C]nerme siem[D]pre junto a [G]ti, siem[E]pre juntos Tú y [Am]yo, Se[D]ñor. [Am] [D]',
+      '[G]Quieres con[D]tar [Em] con mi [Bm]labor,',
+      'pu[C]diéndolo tu [D]todo y nada [G]yo. [D]',
+      '[G]Mira Se[D]ñor, [Em] mi co[Bm]razón',
+      'y en[G]ciende en [G]él el [G]fuego',
+      'que [C]nace en [Am]tu pre[D]sencia.',
       '{end_of_verse}',
       '',
-      '{start_of_chorus}',
-      '[G]Yo quiero [D]ser tu servi[C]dor. [G]Yo quiero [D]ser tu servi[C]dor,',
-      'Es[Bm]clavo que no [C]sabe lo que ha[G]cer sin su Se[D]ñor.',
-      '[G]Yo quiero [D]ser tu servi[C]dor[D], vi[G]vir tan [D]sólo de tu a[C]mor,',
-      'Sen[Bm]tir la sed de [C]almas... [Am]que me infunde tu ca[D]lor.',
-      '{end_of_chorus}'
+      '{start_of_verse}',
+      'Pero [G]Tú, me has querido aso[Bm]ciar, [C]',
+      'por a[D]mor a tu la[G7]bor,',
+      'y te[C]nerme [D]siempre junto a [Bm]ti,',
+      'siem[E]pre juntos Tú y [Am]yo, Se[D]ñor. [Am] [D]',
+      '{end_of_verse}',
     ].join('\n') }
   ,{ id:'cordero-misa-santiago', chordpro:[
       '{title: Cordero de Dios (Kairoi)}',
@@ -785,18 +798,18 @@ class Component extends DCLogic {
       '{columns: 1}',
       '',
       '{start_of_verse}',
-      '[Em]Cordero de Dios que quitas el pe[Am]cado del [Em]mundo,',
-      'ten pie[Am]dad Se[B7]ñor, piedad Se[Em]ñor, de no[B7]sotros.',
+      '[Do]Cordero de Dios que quitas el pe[Sol]cado del [Sol7]mundo,',
+      '[Do]ten [Do7]piedad Se[Sol]ñor, piedad Se[Fa]ñor, de no[Do]sotros.',
       '{end_of_verse}',
       '',
       '{start_of_verse}',
-      '[Em]Cordero de Dios que quitas el pe[Am]cado del [Em]mundo,',
-      'ten pie[Am]dad Se[B7]ñor, piedad Se[Em]ñor, de no[B7]sotros.',
+      '[Do]Cordero de Dios que quitas el pe[Sol]cado del [Sol7]mundo,',
+      '[Do]ten [Do7]piedad Se[Sol]ñor, piedad Se[Fa]ñor, de no[Do]sotros.',
       '{end_of_verse}',
       '',
       '{start_of_verse}',
-      '[Em]Cordero de Dios que quitas el pe[Am]cado del [Em]mundo,',
-      '[Am]danos la [Em]paz, [B7]dánosla, [Em]dánosla.',
+      '[Do]Cordero de Dios que quitas el pe[Sol]cado del [Sol7]mundo,',
+      '[Do7]danos la paz, dános[Sol]la, [Fa]dá[Sol]nos[Do]la.',
       '{end_of_verse}',
     ].join('\n') }
   ,{ id:'cordero-palazon', chordpro:[
@@ -1316,24 +1329,24 @@ class Component extends DCLogic {
       '{columns: 1}',
       '',
       '{start_of_verse: Estrofa 1}',
-      '[C]Un niño se te acercó [G]aquella tarde, [Am]',
-      'sus cinco [F]panes te dio, [G]para ayu[C]darte, [C7]',
-      'los dos hi[F]cisteis que ya [G]no hubiera [C]hambre [Am]',
-      'los dos hi[F]cisteis que ya [G]no hubiera [C]hambre. [G]',
+      '[A]Un niño se te acercó [E] aquella [F#m]tarde,',
+      'sus cinco [D]panes te dio, [E]para ayu[A]darte, [A7]',
+      'los dos hi[D]cisteis que ya[E] no hubiera [A]hambre[F#m]',
+      'los dos hi[D]cisteis que ya [E] no hubiera [A]hambre.',
       '{end_of_verse}',
       '',
       '{start_of_verse: Estrofa 2}',
-      'La tierra, el [C]aire y el sol [G]son tu re[Am]galo,',
-      'y mil es[F]trellas de luz [G]sembró tu [C]mano. [C7]',
-      'El hombre [F]pone su amor [G]y su tra[C]bajo [Am]',
-      'el hombre [F]pone su amor [G]y su tra[C]bajo. [G]',
+      '[A]La tierra, el aire y el sol [E] son tu re[F#m]galo,',
+      'y mil es[D]trellas de luz[E] sembró tu [A]mano. [A7]',
+      'El hombre [D]pone su amor [E] y su tra[A]bajo[F#m]',
+      'el hombre [D]pone su amor [E] y su tra[A]bajo.',
       '{end_of_verse}',
       '',
       '{start_of_verse: Estrofa 3}',
-      'También yo [C]quiero poner [G]sobre la [Am]mesa',
-      'mis cinco [F]panes que son [G]una pro[C]mesa [C7]',
-      'de darte [F]todo mi amor [G]y mi po[C]breza [Am]',
-      'de darte [F]todo mi amor [G]y mi po[C]breza.',
+      '[A]También yo quiero poner [E] sobre la [F#m]mesa',
+      'mis cinco [D]panes que son[E] una pro[A]mesa[A7]',
+      'de darte [D]todo mi amor[E] y mi po[A]breza[F#m]',
+      'de darte [D]todo mi amor[E] y mi po[A]breza.',
       '{end_of_verse}',
     ].join('\n') }
   ,{ id:'vino-y-pan', chordpro:[
@@ -1839,27 +1852,28 @@ class Component extends DCLogic {
       '{section: Señor ten piedad}',
       '{artist: Hakuna}',
       '{columns: 1}',
+      '{chords: Emadd9 0 2 4 0 3 0 | Am7 x 0 2 0 1 0 | B7 x 2 1 2 0 2 | Em9 0 2 4 0 3 0 | Cd x x 4 5 4 5}',
       '',
-      '{start_of_verse}',
-      '[Emadd9] [Am7] [B7] / [Emadd9] [Em9] (x2)',
+      '{start_of_verse: Intro}',
+      '[Emadd9] [Am7] [B7] [/] [Emadd9] [Em9] [(x2)]',
       '{end_of_verse}',
       '',
-      '{start_of_verse}',
-      '[Emadd9]Señor [Em9] [Am7]ten piedad,',
-      '[Cd]perdóname, [Emadd9]Se[Em9]ñor,',
-      '[B7]Señor, [Emadd9]ten pie[Em9]dad.',
+      '{start_of_verse: Estrofa 1}',
+      '[Emadd9]Señor [Em9] ten pie[Am7]dad,',
+      'per[Cd]dóname, Se[Emadd9]ñor, [Em9]',
+      'Se[B7]ñor, ten pie[Emadd9]dad. [Em9]',
       '{end_of_verse}',
       '',
-      '{start_of_verse}',
-      'Cristo apiádate,',
-      'de este mundo apiádate',
-      'Cristo, ten piedad.',
+      '{start_of_verse: Estrofa 2}',
+      '[Emadd9]Cristo[Em9] apiáda[Am7]te,',
+      'de este [Cd]mundo apiáda[Emadd9]te [Em9]',
+      '[B7]Cristo, ten pie[Emadd9]dad. [Em9]',
       '{end_of_verse}',
       '',
-      '{start_of_verse}',
-      'Perdónanos,',
-      'Tú que sanas límpianos,',
-      'Señor, ten piedad.',
+      '{start_of_verse: Estrofa 3}',
+      '[Emadd9]Per[Em9]dóna[Am7]nos,',
+      'Tú que [Cd]sanas límpia[Emadd9]nos, [Em9]',
+      'Se[B7]ñor, ten pie[Em]dad.',
       '{end_of_verse}',
     ].join('\n') }
   ,{ id:'salve-regina', chordpro:[
@@ -2113,18 +2127,56 @@ class Component extends DCLogic {
     else { paddingCh=Math.round(raw.replace(/ /g,' ').length*0.72); visSegs=echoLine.slice(1); }
     const z=this._measEm('0')||0.5;
     const measCh=(t)=>this._measEm(String(t||''))/z;
-    // Texto del eco (sin acordes inline → sin fila extra que separe del verso principal)
-    const echoText=visSegs.map((s,i)=>R('span',{key:i}, String(s[1]||'')));
+    // Texto del eco (sin acordes inline → sin fila extra que separe del verso principal).
+    // Cada segmento lleva data-echoseg para alinear su acorde EXACTAMENTE por medición real.
+    const echoText=visSegs.map((s,i)=>R('span',{key:i,'data-echoseg':String(i)}, String(s[1]||'')));
     const echoRow=R('div',{key:key+'e',style:{color:negro,whiteSpace:'nowrap',paddingLeft:paddingCh+'ch',lineHeight:'1.45',letterSpacing:'0.02em',marginTop:'-0.34em'}}, echoText);
-    // Acorde(s) del eco, absolutos, en la fila de acordes principal (top:0 del contenedor)
+    // Acorde(s) del eco, absolutos, en la fila de acordes principal (top:0 del contenedor).
+    // La posición inicial (ch) es aproximada; _correctPage la reajusta al offset REAL de la
+    // sílaba (data-echoseg) tras el layout, para que caiga justo sobre ella (p.ej. "ñor").
     const echoChords=[]; let cum='';
     visSegs.forEach((s,i)=>{
       if(s[0] && !hideChords){
-        echoChords.push(R('span',{key:'ec'+i,style:{position:'absolute',top:0,left:(paddingCh+measCh(cum))+'ch',color:rojo,fontWeight:700,fontSize:'0.82em',lineHeight:'1.15',whiteSpace:'nowrap'}}, this.trans(s[0])));
+        echoChords.push(R('span',{key:'ec'+i,'data-echochord':String(i),style:{position:'absolute',top:0,left:(paddingCh+measCh(cum))+'ch',color:rojo,fontWeight:700,fontSize:'0.82em',lineHeight:'1.15',whiteSpace:'nowrap'}}, this.trans(s[0])));
       }
       cum+=String(s[1]||'');
     });
-    return R('div',{key,style:{position:'relative',marginBottom:'0.5em',whiteSpace:'nowrap'}}, mainEl, echoRow, ...echoChords);
+    return R('div',{key,'data-echopair':'1',style:{position:'relative',marginBottom:'0.5em',whiteSpace:'nowrap'}}, mainEl, echoRow, ...echoChords);
+  }
+
+  // Diagrama de un acorde: 6 cuerdas (mi-la-re-sol-si-mi), puntos de digitación, cejilla/nut,
+  // 'x' cuerda muda, 'o' al aire. frets = 6 valores (-1=muda, 0=aire, n=traste). Si el acorde
+  // sube de traste, muestra ventana desplazada con el nº de traste a la izquierda.
+  renderChordDiagram(name, frets){
+    const R=React.createElement, rojo='#8B1A1A', ink='#4a3f3a';
+    const pos=frets.filter(f=>f>0);
+    const maxF=pos.length?Math.max(...pos):0, minF=pos.length?Math.min(...pos):0;
+    const nF=4;
+    const startFret=(maxF>4)?minF:1;
+    const nutTop=startFret===1;
+    const sx=8, fy=10, padX=7, padTop=15, padBot=4;
+    const W=padX*2+sx*5, H=padTop+fy*nF+padBot;
+    const X=i=>padX+sx*i, Y=r=>padTop+fy*r;
+    const k=[];
+    for(let r=0;r<=nF;r++) k.push(R('line',{key:'f'+r,x1:X(0),y1:Y(r),x2:X(5),y2:Y(r),stroke:ink,strokeWidth:(r===0&&nutTop)?2.4:0.8}));
+    for(let i=0;i<6;i++) k.push(R('line',{key:'s'+i,x1:X(i),y1:Y(0),x2:X(i),y2:Y(nF),stroke:ink,strokeWidth:0.8}));
+    if(!nutTop) k.push(R('text',{key:'nf',x:X(0)-3,y:Y(0)+fy*0.75,fontSize:7,fill:ink,textAnchor:'end',fontFamily:'system-ui,sans-serif'},startFret+''));
+    frets.forEach((f,i)=>{
+      if(f<0) k.push(R('text',{key:'m'+i,x:X(i),y:padTop-5,fontSize:7,fill:ink,textAnchor:'middle',fontFamily:'system-ui,sans-serif'},'×'));
+      else if(f===0) k.push(R('circle',{key:'o'+i,cx:X(i),cy:padTop-7,r:2.3,fill:'none',stroke:ink,strokeWidth:0.9}));
+      else { const rel=f-startFret+1; if(rel>=1&&rel<=nF) k.push(R('circle',{key:'d'+i,cx:X(i),cy:Y(rel-1)+fy/2,r:2.9,fill:rojo})); }
+    });
+    return R('div',{key:name,style:{display:'inline-flex',flexDirection:'column',alignItems:'center',margin:'0 7px'}},
+      R('div',{style:{fontFamily:"'EB Garamond',serif",fontWeight:700,fontSize:'11px',color:rojo,marginBottom:'2px',whiteSpace:'nowrap',lineHeight:1}},name),
+      R('svg',{width:W,height:H,viewBox:'0 0 '+W+' '+H,style:{display:'block',overflow:'visible'}},k)
+    );
+  }
+  renderChordDiagrams(diagrams){
+    const R=React.createElement,{gris}=this.pal();
+    if(!diagrams||!diagrams.length) return null;
+    return R('div',{'data-chorddiagrams':'1',style:{flex:'0 0 auto',display:'flex',flexWrap:'wrap',justifyContent:'center',alignItems:'flex-start',gap:'4px 0',marginBottom:'18px',paddingBottom:'12px',borderBottom:'1px solid rgba(139,26,26,.18)'}},
+      diagrams.map(d=>this.renderChordDiagram(d.name,d.frets))
+    );
   }
 
   renderBlock(b,key,hideChords){
@@ -2137,13 +2189,17 @@ class Component extends DCLogic {
       if(nxEcho && !lnEcho){ lines.push(this.renderEchoPair(ln,nx,'lp'+j,b.isChorus,hideChords)); j++; }
       else lines.push(this.renderLine(ln,'ln'+j,b.isChorus,undefined,hideChords));
     }
-    return R('div',{key,style:{marginBottom:'1.4em',breakInside:'avoid',breakBefore:'avoid'}},...lines);
+    // Un bloque etiquetado como "Intro" lleva algo más de aire debajo, para que se vea
+    // separado del canto pero se entienda que es la misma canción (solo afecta a cantos
+    // que declaran {start_of_verse: Intro}).
+    const introLike=b.label && /^intro/i.test(String(b.label).trim());
+    return R('div',{key,style:{marginBottom:introLike?'2em':'1.4em',breakInside:'avoid',breakBefore:'avoid'}},...lines);
   }
 
   // ── YouTube ───────────────────────────────────────────────────
   youtubeLinks(){
     return {
-      'alza-la-mirada':          'https://www.youtube.com/watch?v=ALzBO0FVQfI&list=RDALzBO0FVQfI&start_radio=1',
+      'alza-la-mirada':          'https://www.youtube.com/watch?v=Jj8X5vv5LNY&list=RDJj8X5vv5LNY&start_radio=1',
       'amaos':                   'https://www.youtube.com/watch?v=ALzBO0FVQfI&list=RDALzBO0FVQfI&start_radio=1',
       'dios-esta-aqui':          'https://www.youtube.com/watch?v=-1lEvbddHD8&list=RD-1lEvbddHD8&start_radio=1',
       'en-su-mesa-hay-amor':     'https://www.youtube.com/watch?v=5lbSGMQtDwQ&list=RD5lbSGMQtDwQ&start_radio=1',
@@ -2152,12 +2208,11 @@ class Component extends DCLogic {
       'gloria-emmanuel-roque':   'https://youtu.be/fI6zWrJGA2w?si=GxuRN1TYudecRWUu',
       'gloria-palazon':          'https://www.youtube.com/watch?v=2rihOjyqybk',
       'salve-regina':            'https://www.youtube.com/watch?v=oCKET6xK0-A',
-      'aleluya-kairoi':          'https://www.youtube.com/watch?v=DgldHGgQLQo&list=RDDgldHGgQLQo&start_radio=1',
+      'aleluya-santiago':          'https://www.youtube.com/watch?v=DgldHGgQLQo&list=RDDgldHGgQLQo&start_radio=1',
       'aleluya-hakuna':          'https://drive.google.com/drive/folders/1I7YFaSXryzzVlYIA9tPU5v6ETkq4MpZn',
       'senor-ten-piedad-hakuna':   'https://drive.google.com/file/d/1V4JK1_kgezdiy4HO06oEJ35UCMJQVrst/view?usp=share_link',
       'cuando-estas-en-el-altar':'https://www.youtube.com/watch?v=KUPtiXVx2yM',
       'esto-que-te-doy':         'https://www.youtube.com/watch?v=stkDT4Slmcg&list=RDstkDT4Slmcg&start_radio=1',
-      'ocupate-tu-de-todo':      'https://www.youtube.com/watch?v=du8zVtkHdyk',
       'que-te-puedo-dar':        'https://www.youtube.com/watch?v=GwECKkydXUA&list=RDGwECKkydXUA&start_radio=1',
       'quiero-estar-senor':      'https://www.youtube.com/watch?v=MQS4i8Dk8PQ',
       'quiero-ser-tu-servidor':  'https://www.youtube.com/watch?v=z-swbX59k6s&list=RDz-swbX59k6s&start_radio=1',
@@ -2486,6 +2541,12 @@ class Component extends DCLogic {
     );
 
     const _blocks=song.blocks;
+    // Diagramas de acordes (si el canto los define y NO estamos en "Solo letra"): se dibujan
+    // al pie del canto; su altura se RESERVA para que el texto no se solape con ellos.
+    const _diagrams=(!hideChords && song.chordDiagrams && song.chordDiagrams.length)?song.chordDiagrams:null;
+    const _perRow=Math.max(1,Math.floor((L.availW||300)/70));
+    const _diagRows=_diagrams?Math.ceil(_diagrams.length/_perRow):0;
+    const _diagReserve=_diagrams?(28+_diagRows*76):0;
     // Nº de columnas AUTOMÁTICO: el que hace caber el canto ENTERO sin scroll al mayor
     // tamaño legible (1 en móvil, hasta 3-4 en pantallas anchas). Nunca parte estrofas.
     let _nCols=1;
@@ -2500,11 +2561,11 @@ class Component extends DCLogic {
     let fittedFs=24;
     // El tamaño lo decide el ajuste automático a una página; _perSongScale/_globalScale son
     // los botones "Texto +/–" del usuario (parten de ese ajuste).
-    try{fittedFs=this.estimateFontSize(_blocks,_nCols,_perSongScale*_globalScale);}catch(e){console.error('estimateFontSize error',e,song.id);}
+    try{fittedFs=this.estimateFontSize(_blocks,_nCols,_perSongScale*_globalScale,_diagReserve);}catch(e){console.error('estimateFontSize error',e,song.id);}
     const cols=R('div',{'data-cols':'1',style:{width:'100%',flex:'0 0 auto',minHeight:0,display:'flex',flexDirection:'row',justifyContent:'space-between',gap:L.gap+'px',position:'relative',zIndex:1,overflow:'visible',fontSize:(fittedFs||24)+'px'}},colEl);
 
     const bodyWrap=R('div',{'data-bodywrap':'1',style:{flex:'1 1 auto',minHeight:0,display:'flex',flexDirection:'column',alignItems:'stretch',overflowY:'auto',overflowX:'hidden'}},
-      (followMode||printMode)?null:capoRow, cols
+      (followMode||printMode)?null:capoRow, _diagrams?this.renderChordDiagrams(_diagrams):null, cols
     );
 
     const footer=R('div',{style:{position:'absolute',bottom:'18px',left:0,right:0,fontSize:'13px',color:gris,borderTop:'1px solid rgba(139,26,26,.12)',padding:'6px '+(L.padX+16)+'px 0',zIndex:2,display:'flex',alignItems:'baseline',justifyContent:'space-between',gap:'14px'}},
@@ -2596,6 +2657,17 @@ class Component extends DCLogic {
   // la fuente lo justo para que ninguna línea se salga. Idempotente.
   _correctPage(w){
     if(!w) return;
+    // Acordes de ECO: reubicar cada acorde absoluto EXACTAMENTE sobre su sílaba, midiendo la
+    // posición real de la sílaba tras el layout (la estimación por canvas no es fiable con
+    // esta fuente). Así la G del eco cae justo sobre "ñor", no sobre "el".
+    try{
+      w.querySelectorAll('[data-echopair]').forEach(wr=>{
+        wr.querySelectorAll('[data-echochord]').forEach(ch=>{
+          const seg=wr.querySelector('[data-echoseg="'+ch.getAttribute('data-echochord')+'"]');
+          if(seg) ch.style.left=seg.offsetLeft+'px';
+        });
+      });
+    }catch(_){}
     // Índice: reducir la fuente hasta que TODO quepa en la página (sin scroll ni desborde).
     const idx=w.querySelector('[data-indexcols]');
     if(idx){
@@ -2838,13 +2910,14 @@ class Component extends DCLogic {
 
   // Tamaño de fuente óptimo: el MAYOR que cabe a la vez en ALTO y en ANCHO del área
   // real disponible (por columna), sin recortes ni scroll innecesario.
-  estimateFontSize(blocks, nCols, songScale){
+  estimateFontSize(blocks, nCols, songScale, reserveH){
     const L=this._L||this._computeLayout();
     const n=Math.max(1,nCols||1);
     // ── Restricción por ALTURA (columna más alta del reparto en n columnas) ──
     let maxEms=Math.max(...this.splitColumns(blocks,n).map(g=>this.blockEms(g)));
     if(!(maxEms>0)) maxEms=1;
-    const fontH=(L.availH/maxEms)*0.98;
+    const availH=Math.max(120, L.availH-(reserveH||0)); // reserva para diagramas de acordes u otros
+    const fontH=(availH/maxEms)*0.98;
     // ── Restricción por ANCHURA (evita desbordes/recortes horizontales) ──
     const colW=Math.max(60,(L.availW-(n-1)*L.gap)/n);
     const maxLineEm=this._maxLineEm(blocks);
