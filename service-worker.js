@@ -1,6 +1,6 @@
 /* Cantoral — Service Worker. Cachea toda la app para funcionar SIN internet.
    Sube CACHE_VERSION cuando cambies archivos para forzar actualización. */
-const CACHE = 'cantoral-v17';
+const CACHE = 'cantoral-v18';
 const CORE = [
   "index.html",
   "manifest.json",
@@ -15,6 +15,7 @@ const CORE = [
   "assets/portada-w.jpg",
   "assets/papel-w.jpg",
   "assets/escudo-w.png",
+  "assets/cartel-fondo.png",
   "icons/apple-touch-icon.png",
   "icons/icon-192.png",
   "icons/icon-512.png",

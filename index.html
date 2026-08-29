@@ -139,12 +139,13 @@ button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 {{ addBtnEl }}
 {{ addModalEl }}
 {{ shareModalEl }}
+{{ followScaleEl }}
 
 
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
-  state = { sem:0, acc:'sharp', notation:'anglo', scale:1, menuHidden:true, darkMode:'light', wakeLockOn:false, chordsHidden:false, celebrations:[], celDetail:null, celMode:null, celAdding:null, celSelected:[], celCreating:false, celNewName:'', celRenameId:null, celRenameName:'', celListOpen:false, celDetailId:null, celActiveId:null, cantoralScrollId:null,  personalCapos:{}, songScales:{}, songSettings:{}, extraSongs:[], addOpen:false, addText:'', addError:'', admin:false, followCel:null, shareUrl:null, shareName:'', printMode:false, ytPlayer:{open:false,videoId:null,url:null,x:20,y:80,embedError:false} };
+  state = { sem:0, acc:'sharp', notation:'anglo', scale:1, menuHidden:true, darkMode:'light', wakeLockOn:false, chordsHidden:false, celebrations:[], celDetail:null, celMode:null, celAdding:null, celSelected:[], celCreating:false, celNewName:'', celRenameId:null, celRenameName:'', celListOpen:false, celDetailId:null, celActiveId:null, cantoralScrollId:null,  personalCapos:{}, songScales:{}, songSettings:{}, extraSongs:[], addOpen:false, addText:'', addError:'', admin:false, followCel:null, followScale:1, shareUrl:null, shareName:'', printMode:false, ytPlayer:{open:false,videoId:null,url:null,x:20,y:80,embedError:false} };
 
   // Contraseña del administrador (controla las opciones extra: añadir cantos, compartir por QR).
   // Cámbiala aquí si quieres otra. Es un candado sencillo del lado del cliente, suficiente
@@ -185,23 +186,103 @@ class Component extends DCLogic {
     }catch(_){}
     return null;
   }
+  // Genera el dataURL del QR para una URL de celebración.
+  _posterQR(url){
+    try{ if(typeof qrcode!=='undefined'){ const qr=qrcode(0,'M'); qr.addData(url); qr.make(); return qr.createDataURL(8,1); } }catch(_){}
+    return '';
+  }
+  // Cartel "Cantos de hoy" reconstruido por código sobre el fondo de acuarela. TODO el texto es
+  // nítido y el subtítulo (nombre de la celebración) es dinámico. Se dibuja a un ancho W dado
+  // (px): W=794 para capturar el PDF A4, W pequeño para la vista previa. Las posiciones son
+  // fracciones medidas del diseño original (cuadro QR x[.218–.781] y[.302–.698], etc.).
+  renderPoster(url,name,W,opts){
+    const R=React.createElement;
+    const H=W*3249/2290;
+    const qrData=(opts&&opts.qr)||this._posterQR(url);
+    const escudo=(window.__resources&&window.__resources.escudoPng)||'assets/escudo-w.png';
+    const fondo=(window.__resources&&window.__resources.cartelPng)||'assets/cartel-fondo.png';
+    const row=(o)=>Object.assign({position:'absolute',left:0,right:0,textAlign:'center',margin:0},o);
+    const boxW=0.563*W, boxL=0.2185*W, boxT=0.302*H, boxH=0.396*H;
+    const escH=0.066*H, escW=escH*320/454;
+    return R('div',{style:{position:'relative',width:W+'px',height:H+'px',overflow:'hidden',background:'#dfe6f0',fontFamily:"'Amaranth',sans-serif"}},
+      R('img',{src:fondo,crossOrigin:'anonymous',alt:'',style:{position:'absolute',left:0,top:0,width:W+'px',height:H+'px',objectFit:'cover',zIndex:0}}),
+      R('div',{style:row({top:0.050*H+'px',fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:0.118*W+'px',color:'#151515',lineHeight:1,letterSpacing:'-0.005em'})},'Cantos de hoy'),
+      R('div',{style:row({top:0.190*H+'px',left:0.07*W+'px',right:0.07*W+'px',fontStyle:'italic',fontWeight:700,fontSize:0.056*W+'px',color:'#4b4b4b',lineHeight:1.12})},name||'Celebración'),
+      R('div',{style:{position:'absolute',left:boxL+'px',top:boxT+'px',width:boxW+'px',height:boxH+'px',background:'#fff',borderRadius:0.010*W+'px',boxShadow:'0 '+0.005*W+'px '+0.022*W+'px rgba(45,65,95,.20)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1}},
+        qrData?R('img',{src:qrData,alt:'QR',style:{width:'87%',height:'87%',imageRendering:'pixelated'}}):R('div',{style:{color:'#aaa',fontSize:0.03*W+'px'}},'QR')
+      ),
+      R('div',{style:row({top:0.712*H+'px',left:0.085*W+'px',right:0.085*W+'px',fontStyle:'italic',fontWeight:700,fontSize:0.0345*W+'px',color:'#4b4b4b',lineHeight:1.22})},'Escanea el código QR para acceder a los cantos de la celebración.'),
+      R('div',{style:row({top:0.800*H+'px',fontStyle:'italic',fontWeight:700,fontSize:0.049*W+'px',color:'#21252b',lineHeight:1.28})},'Parroquia',R('br'),'San Juan Bautista',R('br'),'Urda'),
+      R('img',{src:escudo,crossOrigin:'anonymous',alt:'',style:{position:'absolute',left:'50%',top:0.918*H+'px',width:escW+'px',height:escH+'px',transform:'translateX(-50%)',zIndex:1}})
+    );
+  }
+  _loadPdfLibs(){
+    const loadScript=(src)=>new Promise((res,rej)=>{
+      if(window.__pdflibs&&window.__pdflibs[src]) return res();
+      const s=document.createElement('script'); s.src=src;
+      s.onload=()=>{ (window.__pdflibs=window.__pdflibs||{})[src]=1; res(); };
+      s.onerror=()=>rej(new Error('No se pudo cargar '+src));
+      document.head.appendChild(s);
+    });
+    return loadScript('vendor/html2canvas.min.js').then(()=>loadScript('vendor/jspdf.umd.min.js'));
+  }
+  _imgsReady(node){
+    const imgs=Array.prototype.slice.call(node.querySelectorAll('img'));
+    return Promise.all(imgs.map(im=>im.complete&&im.naturalWidth?Promise.resolve():new Promise(r=>{im.onload=im.onerror=r;})));
+  }
+  // Descarga el cartel como PDF A4 (offline: html2canvas + jsPDF locales). Captura el nodo del
+  // cartel a tamaño completo (oculto fuera de pantalla) y lo monta en un A4 exacto.
+  async downloadPosterPDF(){
+    const node=this._posterCap;
+    if(!node){ try{alert('No se pudo preparar el cartel.');}catch(_){}; return; }
+    const ov=document.createElement('div');
+    ov.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(20,15,15,.86);color:#fff;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;font-size:20px;font-weight:700;';
+    ov.textContent='Generando PDF del cartel…';
+    document.body.appendChild(ov);
+    try{
+      await this._loadPdfLibs();
+      const HC=window.html2canvas, JS=(window.jspdf&&window.jspdf.jsPDF)||window.jsPDF;
+      if(!HC||!JS) throw new Error('No se pudieron cargar las librerías del PDF');
+      try{ if(document.fonts&&document.fonts.ready) await document.fonts.ready; }catch(_){}
+      await this._imgsReady(node);
+      await new Promise(r=>setTimeout(r,120));
+      const w=node.offsetWidth||794, h=Math.round(w*3249/2290);
+      const canvas=await HC(node,{scale:2,useCORS:true,backgroundColor:'#dfe6f0',width:w,height:h,windowWidth:w,windowHeight:h,scrollX:0,scrollY:0});
+      const img=canvas.toDataURL('image/jpeg',0.95);
+      const doc=new JS({unit:'mm',format:'a4',orientation:'portrait',compress:true});
+      doc.addImage(img,'JPEG',0,0,210,297,undefined,'FAST');
+      const safe=(this.state.shareName||'celebracion').replace(/[^\w áéíóúñÁÉÍÓÚÑ.-]/g,'').trim()||'celebracion';
+      doc.save('Cantos de hoy - '+safe+'.pdf');
+    }catch(e){
+      console.error('Poster PDF error',e);
+      try{ alert('No se pudo generar el PDF: '+((e&&e.message)||e)); }catch(_){}
+    }finally{ try{ ov.remove(); }catch(_){} }
+  }
   renderShareModal(){
     if(!this.state.shareUrl) return null;
     const R=React.createElement,{rojo,negro,gris,bg}=this.pal();
-    const url=this.state.shareUrl;
-    let qrData='';
-    try{ if(typeof qrcode!=='undefined'){ const qr=qrcode(0,'M'); qr.addData(url); qr.make(); qrData=qr.createDataURL(6,2); } }catch(_){}
-    return R('div',{onClick:()=>this.setState({shareUrl:null}),style:{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',zIndex:400,display:'flex',alignItems:'center',justifyContent:'center',padding:'16px'}},
-      R('div',{onClick:(e)=>e.stopPropagation(),style:{background:bg,borderRadius:'14px',padding:'22px 26px',width:'min(420px,94%)',textAlign:'center',fontFamily:"'EB Garamond',serif"}},
-        R('div',{style:{fontFamily:"'Playfair Display',serif",fontStyle:'italic',fontSize:'24px',color:negro,marginBottom:'2px'}},'Compartir celebración'),
-        R('div',{style:{fontSize:'15px',color:gris,marginBottom:'16px'}},this.state.shareName||''),
-        qrData
-          ? R('img',{src:qrData,alt:'QR',style:{width:'240px',height:'240px',margin:'0 auto 12px',display:'block',imageRendering:'pixelated',background:'#fff',borderRadius:'8px',padding:'6px'}})
-          : R('div',{style:{color:'#b00',marginBottom:'12px'}},'No se pudo generar el QR'),
-        R('div',{style:{fontSize:'13px',color:gris,marginBottom:'14px'}},'La gente escanea el QR con la cámara y sigue los cantos (solo letra).'),
-        R('div',{style:{display:'flex',gap:'10px',justifyContent:'center'}},
-          R('button',{onClick:()=>{ try{ if(navigator.clipboard) navigator.clipboard.writeText(url); }catch(_){}; alert('Enlace copiado.'); },style:{background:rojo,color:'#fff',border:'none',borderRadius:'8px',padding:'8px 18px',cursor:'pointer',fontFamily:"'EB Garamond',serif",fontSize:'15px'}},'Copiar enlace'),
-          R('button',{onClick:()=>this.setState({shareUrl:null}),style:{background:'none',border:'1px solid '+gris,color:negro,borderRadius:'8px',padding:'8px 18px',cursor:'pointer',fontFamily:"'EB Garamond',serif",fontSize:'15px'}},'Cerrar')
+    const url=this.state.shareUrl, name=this.state.shareName||'';
+    const qrData=this._posterQR(url);
+    const prevW=286;
+    const btn=(o)=>Object.assign({border:'none',borderRadius:'8px',padding:'9px 16px',cursor:'pointer',fontFamily:"'EB Garamond',serif",fontSize:'15px'},o);
+    return R('div',{onClick:()=>this.setState({shareUrl:null}),style:{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',zIndex:400,display:'flex',alignItems:'center',justifyContent:'center',padding:'16px',overflowY:'auto'}},
+      R('div',{onClick:(e)=>e.stopPropagation(),style:{background:bg,borderRadius:'14px',padding:'20px 22px',width:'min(360px,94%)',textAlign:'center',fontFamily:"'EB Garamond',serif",maxHeight:'92vh',overflowY:'auto'}},
+        R('div',{style:{fontFamily:"'Playfair Display',serif",fontStyle:'italic',fontSize:'22px',color:negro,marginBottom:'12px'}},'Compartir celebración'),
+        // Vista previa del cartel (se escala al ancho disponible para no desbordar)
+        R('div',{ref:(n)=>{ if(n){ const iw=n.clientWidth||prevW; const inner=n.firstElementChild; if(inner){ const s=iw/prevW; inner.style.transform='scale('+s+')'; n.style.height=Math.round(prevW*3249/2290*s)+'px'; } } },style:{width:'100%',maxWidth:prevW+'px',margin:'0 auto 14px',position:'relative',overflow:'hidden',borderRadius:'8px',boxShadow:'0 3px 14px rgba(0,0,0,.28)'}},
+          R('div',{style:{width:prevW+'px',transformOrigin:'top left'}}, this.renderPoster(url,name,prevW,{qr:qrData}))
+        ),
+        // Copia a tamaño completo (oculta) para capturar el PDF
+        R('div',{ref:(n)=>{ this._posterCap=n; },'aria-hidden':'true',style:{position:'fixed',left:'-99999px',top:0,width:'794px',height:(794*3249/2290)+'px',pointerEvents:'none'}},
+          this.renderPoster(url,name,794,{qr:qrData})
+        ),
+        R('div',{style:{fontSize:'12.5px',color:gris,marginBottom:'14px'}},'Descárgalo en PDF para imprimirlo y colgarlo en la iglesia. La gente escanea el QR y sigue los cantos (solo letra).'),
+        R('div',{style:{display:'flex',flexDirection:'column',gap:'8px'}},
+          R('button',{onClick:()=>this.downloadPosterPDF(),style:btn({background:rojo,color:'#fff',fontWeight:700})},'⬇  Descargar cartel (PDF)'),
+          R('div',{style:{display:'flex',gap:'8px'}},
+            R('button',{onClick:()=>{ try{ if(navigator.clipboard) navigator.clipboard.writeText(url); }catch(_){}; alert('Enlace copiado.'); },style:btn({background:'none',border:'1px solid '+gris,color:negro,flex:'1'})},'Copiar enlace'),
+            R('button',{onClick:()=>this.setState({shareUrl:null}),style:btn({background:'none',border:'1px solid '+gris,color:negro,flex:'1'})},'Cerrar')
+          )
         )
       )
     );
@@ -461,6 +542,22 @@ class Component extends DCLogic {
       '[Do]Tu camino [Sol]quiero se[Lam]guir',
       '[Fa]no me dejes solo Se[Sol]ñor.',
       '{end_of_verse}',
+    ].join('\n') }
+  ,{ id:'aleluya-taize', chordpro:[
+      '{title: Aleluya (Taizé)}',
+      '{section: Aleluya}',
+      '{artist: Comunidad de Taizé}',
+      '{columns: 1}',
+      '',
+      '{start_of_chorus}',
+      '[Do]Alelu[Mim]ya, ale[Fa]lu- alelu[Do]ya',
+      '[Fa]alelu[Do]ya, ale[Re7]lu[Sol]ya.',
+      '{end_of_chorus}',
+      '',
+      '{start_of_chorus}',
+      '[Do]Alelu[Mim]ya, ale[Fa]lu- alelu[Do]ya',
+      '[Fa]alelu[Do]ya, ale[Sol]lu[Do]ya.',
+      '{end_of_chorus}',
     ].join('\n') }
   ,{ id:'gloria-palazon', chordpro:[
       '{title: Gloria (Palazón)}',
@@ -1986,6 +2083,16 @@ class Component extends DCLogic {
   // ── Renderizado ────────────────────────────────────────────────
   renderLine(segsRaw,key,isChorus,scale,hideChords){
     const R=React.createElement,rojo='#8B1A1A',negro='#1a1a1a';
+    // ── SOLO LETRA (modo "seguir" por QR / botón "Solo letra") ──
+    // Texto que FLUYE y se adapta al ancho del dispositivo (móvil), SIN el relleno ni los
+    // guiones de separación de sílabas (que solo existen para alinear acordes y aquí no
+    // aportan nada). Las líneas envuelven de forma natural en lugar de recortarse.
+    if(hideChords){
+      let plain=segsRaw.map(s=>String(s[1]||'')).join('');
+      plain=plain.replace(/^>>\s*(?:\d+(?:\.\d+)?ch)?\s*/,''); // quita marcador de 2ª voz
+      if(!plain.replace(/ /g,' ').trim()) return R('div',{key,style:{height:'0.4em'}}); // línea de solo acordes → hueco mínimo
+      return R('div',{key,style:{color:negro,fontWeight:isChorus?700:'normal',lineHeight:1.4,marginBottom:'0.3em',overflowWrap:'break-word'}},plain);
+    }
     // Chord-only line (intro/outro marker): render compactly
     const isChordOnly=segsRaw.every(s=>!(s[1]||'').trim());
     if(isChordOnly){
@@ -2199,6 +2306,7 @@ class Component extends DCLogic {
   // ── YouTube ───────────────────────────────────────────────────
   youtubeLinks(){
     return {
+      'aleluya-taize': 'https://www.youtube.com/watch?v=6bVFneGId34&list=RD6bVFneGId34&start_radio=1',
       'vino-y-pan': 'https://drive.google.com/file/d/15gOHKEKo7yvV3v8J_lrtp0LRWC72Z5NS/view?usp=share_link',
       'tomad-y-comed': 'https://drive.google.com/file/d/1XML0H3qnkWQujDs8fAprudBI5OnSKzBu/view?usp=share_link',
       'kyrie': 'https://drive.google.com/drive/folders/1QOJR3_BuSHmGGxY9AYAQhHL2X9r3PoVa',
@@ -2492,6 +2600,7 @@ class Component extends DCLogic {
     const L=this._L||this._computeLayout();
     const pad=L.padY+'px '+L.padX+'px';
     const hideChords=followMode?true:(printMode?false:this.state.chordsHidden);
+    this._hideChordsFit=hideChords; // el motor de ajuste (blockEms/estimateFontSize) usa alto solo-letra
     const personalCapo=(this.state.personalCapos[song.id]!==undefined&&this.state.personalCapos[song.id]!==null)?this.state.personalCapos[song.id]:0;
     const setPersonalCapo=(n)=>{
       const capos={...this.state.personalCapos,[song.id]:n};
@@ -2562,6 +2671,9 @@ class Component extends DCLogic {
     // tamaño legible (1 en móvil, hasta 3-4 en pantallas anchas). Nunca parte estrofas.
     let _nCols=1;
     try{ _nCols=this.chooseColumnCount(_blocks); }catch(e){ _nCols=1; }
+    // Solo letra / modo "seguir" en móvil: SIEMPRE 1 columna (leer letra en 2 columnas en un
+    // móvil es incómodo). En pantalla ancha se respeta el reparto en columnas.
+    if(hideChords && L.pageW<640) _nCols=1;
     const _groups=this.splitColumns(_blocks,_nCols);
     const colEl=_nCols<=1
       ? R('div',{style:{flex:'1 1 0',minWidth:0,overflow:'visible'}},_blocks.map((b,i)=>this.renderBlock(b,'b'+i,hideChords)))
@@ -2573,6 +2685,14 @@ class Component extends DCLogic {
     // El tamaño lo decide el ajuste automático a una página; _perSongScale/_globalScale son
     // los botones "Texto +/–" del usuario (parten de ese ajuste).
     try{fittedFs=this.estimateFontSize(_blocks,_nCols,_perSongScale*_globalScale,_diagReserve);}catch(e){console.error('estimateFontSize error',e,song.id);}
+    // Solo letra / modo "seguir": NO comprimimos la letra para que quepa en una pantalla; se
+    // permite hacer scroll si el canto es largo. Usamos un tamaño CÓMODO relativo al ancho del
+    // dispositivo, ajustable por el usuario (Texto +/– en la app; A−/A+ en el modo seguir).
+    if(hideChords){
+      const uScale=followMode?(this.state.followScale||1):(_perSongScale*_globalScale);
+      const base=Math.max(16,Math.min(23,Math.round((L.pageW||360)*0.052)));
+      fittedFs=Math.round(Math.max(13,Math.min(42, base*uScale)));
+    }
     const cols=R('div',{'data-cols':'1',style:{width:'100%',flex:'0 0 auto',minHeight:0,display:'flex',flexDirection:'row',justifyContent:'space-between',gap:L.gap+'px',position:'relative',zIndex:1,overflow:'visible',fontSize:(fittedFs||24)+'px'}},colEl);
 
     const bodyWrap=R('div',{'data-bodywrap':'1',style:{flex:'1 1 auto',minHeight:0,display:'flex',flexDirection:'column',alignItems:'stretch',overflowY:'auto',overflowX:'hidden'}},
@@ -2752,9 +2872,13 @@ class Component extends DCLogic {
   // ── Helpers de columnas ───────────────────────────────────────
   // Altura estimada en em de una lista de bloques
   blockEms(blist){
+    // En "solo letra" (modo seguir) cada línea es SOLO la letra (sin fila de acorde encima),
+    // así que ocupa mucho menos alto: ~1.8em en vez de 2.9em. Si no, el motor cree que el
+    // canto es más alto y encoge la letra dejando media pantalla vacía.
+    const hc=this._hideChordsFit;
     let t=0;
     for(const b of blist){
-      for(const line of b.lines) t+=line.some(s=>s[0])?2.9:1.95;
+      for(const line of b.lines) t+= hc ? 1.8 : (line.some(s=>s[0])?2.9:1.95);
       t+=1.5;
     }
     return t;
@@ -2932,12 +3056,14 @@ class Component extends DCLogic {
     // ── Restricción por ANCHURA (evita desbordes/recortes horizontales) ──
     const colW=Math.max(60,(L.availW-(n-1)*L.gap)/n);
     const maxLineEm=this._maxLineEm(blocks);
-    const fontW=maxLineEm>0?(colW/maxLineEm)*0.93:Infinity;
+    // En "solo letra" el texto ENVUELVE (no se recorta), así que el ancho NO limita la fuente.
+    const fontW=this._hideChordsFit?Infinity:(maxLineEm>0?(colW/maxLineEm)*0.93:Infinity);
     const sc=(songScale||1);
     const minFs=9;
     // En impresión/PDF topamos la fuente para que los cantos cortos no salgan enormes:
     // así todas las páginas quedan uniformes (los largos se reducen para caber).
-    const maxFs=this._printMode?20:44;
+    // En "solo letra" un tope cómodo de lectura (no gigante).
+    const maxFs=this._printMode?20:(this._hideChordsFit?27:44);
     // Tamaño base = el mayor que hace caber el canto ENTERO en una página (fitFs). La escala
     // del usuario (botones Texto +/–) parte de ahí: puede AGRANDAR (aceptando algo de scroll
     // si se pasa) o reducir. El ANCHO es tope DURO: nunca se recorta una palabra.
@@ -3101,6 +3227,7 @@ class Component extends DCLogic {
     const _follow=this._decodeFollow(); if(_follow){ this.setState({followCel:_follow, menuHidden:true}); }
     if(/[?&]print=1/.test(location.search)){ this.setState({printMode:true, menuHidden:true}); }
     try{ const sc=localStorage.getItem('cantoral_scales'); if(sc) this.setState({songScales:JSON.parse(sc)}); }catch(_){}
+    try{ const fs=parseFloat(localStorage.getItem('cantoral_follow_scale')); if(fs>0) this.setState({followScale:fs}); }catch(_){}
     try{ const ss=localStorage.getItem('cantoral_song_settings'); if(ss) this.setState({songSettings:JSON.parse(ss)}); }catch(_){}
     try{ const p=localStorage.getItem('cantoral_prefs'); if(p){ const o=JSON.parse(p); const patch={}; ['sem','acc','notation','scale','darkMode','chordsHidden'].forEach(k=>{ if(o[k]!==undefined) patch[k]=o[k]; }); this.setState(patch); } }catch(_){}
     // Measurement div: plain block, no CSS columns, positioned off-screen
@@ -3142,6 +3269,26 @@ class Component extends DCLogic {
   }
   componentDidUpdate(){ this.scheduleFit(); this._applyDark(); this._observePages(); }
   componentWillUnmount(){ window.removeEventListener('resize',this._onResize); try{ if(window.visualViewport) window.visualViewport.removeEventListener('resize',this._onResize); }catch(_){} try{ const _sc=document.querySelector('[data-scroll]'); if(_sc&&this._onScroll) _sc.removeEventListener('scroll',this._onScroll); }catch(_){} clearTimeout(this._fitTimer); clearTimeout(this._rzT); clearTimeout(this._scrollT); try{ if(this._io) this._io.disconnect(); }catch(_){} if(this._mDiv) this._mDiv.remove(); if(this._mq&&this._mqHandler) this._mq.removeEventListener('change',this._mqHandler); if(this._visHandler) document.removeEventListener('visibilitychange',this._visHandler); if(this._wakeLock) this._wakeLock.release(); if(this._ytMsgHandler) window.removeEventListener('message',this._ytMsgHandler); }
+
+  // Modo "seguir": único control disponible = agrandar/reducir la letra. Botones flotantes
+  // discretos (no hay barra de acordes/tono/cejilla en este modo). La preferencia se guarda.
+  setFollowScale(d){
+    this.setState(s=>{
+      const v=Math.max(0.7,Math.min(2.2,+(((s.followScale||1)+d)).toFixed(2)));
+      try{localStorage.setItem('cantoral_follow_scale',String(v));}catch(_){}
+      return {followScale:v};
+    });
+  }
+  renderFollowScale(){
+    if(!this.state.followCel) return null;
+    const R=React.createElement;
+    const btn={width:'46px',height:'46px',borderRadius:'50%',border:'none',background:'rgba(139,26,26,.90)',color:'#fff',fontFamily:"'EB Garamond',serif",fontWeight:700,cursor:'pointer',boxShadow:'0 3px 12px rgba(0,0,0,.35)',display:'flex',alignItems:'center',justifyContent:'center',lineHeight:1,WebkitTapHighlightColor:'transparent'};
+    const wrap={position:'fixed',right:'14px',bottom:'calc(18px + env(safe-area-inset-bottom,0px))',zIndex:70,display:'flex',flexDirection:'column',gap:'10px',alignItems:'center'};
+    return R('div',{style:wrap,'aria-label':'Tamaño de letra'},
+      R('button',{onClick:()=>this.setFollowScale(+0.12),style:{...btn,fontSize:'22px'},title:'Agrandar letra','aria-label':'Agrandar letra'},'A+'),
+      R('button',{onClick:()=>this.setFollowScale(-0.12),style:{...btn,fontSize:'16px'},title:'Reducir letra','aria-label':'Reducir letra'},'A−')
+    );
+  }
 
   renderVals(){
     const bOff={background:'none',border:'none',color:'#fff',borderRadius:'4px',padding:'2px 7px',fontSize:'11px',fontFamily:"'EB Garamond',serif",cursor:'pointer',lineHeight:1.3,letterSpacing:'.3px',whiteSpace:'nowrap'};
@@ -3222,6 +3369,7 @@ class Component extends DCLogic {
       addBtnEl:null,
       addModalEl:null,
       shareModalEl:this.renderShareModal(),
+      followScaleEl:this.renderFollowScale(),
       printCantoral:()=>this.printCantoral(),
       toggleFullscreen:()=>{ const d=document, el=d.documentElement; try{ if(!d.fullscreenElement&&!d.webkitFullscreenElement){ const r=el.requestFullscreen||el.webkitRequestFullscreen; if(r){ r.call(el); this.setState({menuHidden:true}); } } else { const x=d.exitFullscreen||d.webkitExitFullscreen; if(x) x.call(d); } }catch(_){} },
       toggleDark:()=>this.toggleDarkMode(),
