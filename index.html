@@ -2724,7 +2724,7 @@ class Component extends DCLogic {
     }
     const cols=R('div',{'data-cols':'1',style:{width:'100%',flex:'0 0 auto',minHeight:0,display:'flex',flexDirection:'row',justifyContent:'space-between',gap:L.gap+'px',position:'relative',zIndex:1,overflow:'visible',fontSize:(fittedFs||24)+'px'}},colEl);
 
-    const bodyWrap=R('div',{'data-bodywrap':'1',style:{flex:'1 1 auto',minHeight:0,display:'flex',flexDirection:'column',alignItems:'stretch',overflowY:'auto',overflowX:_zoom?'auto':'hidden'}},
+    const bodyWrap=R('div',{'data-bodywrap':'1',onScroll:(e)=>this._scrollHint(e.currentTarget),style:{flex:'1 1 auto',minHeight:0,display:'flex',flexDirection:'column',alignItems:'stretch',overflowY:'auto',overflowX:_zoom?'auto':'hidden'}},
       (followMode||printMode)?null:capoRow, _diagrams?this.renderChordDiagrams(_diagrams):null, cols
     );
 
@@ -2733,10 +2733,16 @@ class Component extends DCLogic {
       R('span',{style:{flexShrink:0,fontWeight:700}},String(song.sectionPage||''))
     );
     const wm=R('img',{src:window.__resources&&window.__resources.escudoPng||'assets/escudo-w.png',alt:'',style:{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',width:'100%',height:'100%',objectFit:'contain',opacity:.06,pointerEvents:'none',zIndex:0}});
+    // Aviso SUTIL de "hay más letra abajo": degradado suave + flechita tenue que solo aparece si
+    // el canto no cabe entero y no estás al final (se controla en _scrollHint). Oculto al imprimir.
+    const scrollHint=printMode?null:R('div',{'data-scrollhint':'1',style:{position:'absolute',left:0,right:0,bottom:'42px',height:'40px',pointerEvents:'none',zIndex:3,opacity:0,transition:'opacity .25s ease',background:'linear-gradient(to top, #F5F0E8 42%, rgba(245,240,232,0))',display:'flex',alignItems:'flex-end',justifyContent:'center'}},
+      R('div',{style:{fontSize:'18px',lineHeight:1,color:rojo,opacity:.6,fontFamily:'system-ui'}},'▾')
+    );
 
     return R('section',{key:'song-'+song.id+(song.keySuffix||''),id:song.id,'data-song-id':song.id,'data-page':'1','data-songpage':'1',style:{overflow:'hidden',position:'relative',background:'#F5F0E8',display:'flex',flexDirection:'column',alignItems:'center'}},
       wm,
       footer,
+      scrollHint,
       R('div',{style:{position:'relative',zIndex:1,flex:'1 1 auto',minHeight:0,display:'flex',flexDirection:'column',width:'100%',padding:L.padY+'px '+L.padX+'px 48px'}},
 
         topbar,titleRow,bodyWrap
@@ -2815,6 +2821,17 @@ class Component extends DCLogic {
   // Solo toca páginas próximas → sin coste perceptible ni cuelgues.
   // Corrige UNA página: mide el desbordamiento horizontal real de sus columnas y reduce
   // la fuente lo justo para que ninguna línea se salga. Idempotente.
+  // Muestra/oculta el aviso sutil de "hay más letra abajo": visible solo si el canto no cabe
+  // entero en su contenedor y aún no estás al final. Se llama al ajustar y en cada scroll.
+  _scrollHint(bw){
+    try{
+      if(!bw) return;
+      const sec=bw.closest('section'); if(!sec) return;
+      const hint=sec.querySelector('[data-scrollhint]'); if(!hint) return;
+      const more=(bw.scrollHeight-bw.clientHeight>6)&&(bw.scrollTop<bw.scrollHeight-bw.clientHeight-6);
+      hint.style.opacity=more?'1':'0';
+    }catch(_){}
+  }
   _correctPage(w){
     if(!w) return;
     // Acordes de ECO: reubicar cada acorde absoluto EXACTAMENTE sobre su sílaba, midiendo la
@@ -2845,7 +2862,7 @@ class Component extends DCLogic {
     // Si el usuario ha AGRANDADO esta canción (Texto +), NO reducir por ancho: se permite el
     // scroll horizontal para no cortar los acordes (si no, el "+" quedaría sin efecto).
     const _sid=(w.getAttribute&&w.getAttribute('data-song-id'))||'';
-    if((this.state.songScales[_sid]||1)>1 && !this._printMode && this._L && this._L.pageW<700) return;
+    if((this.state.songScales[_sid]||1)>1 && !this._printMode && this._L && this._L.pageW<700){ const _bwz=w.querySelector('[data-bodywrap]'); if(_bwz) this._scrollHint(_bwz); return; }
     let ratio=1;
     for(const col of cols.children){ if(col.scrollWidth>col.clientWidth+1) ratio=Math.min(ratio, col.clientWidth/col.scrollWidth); }
     if(ratio<0.999){
@@ -2853,6 +2870,7 @@ class Component extends DCLogic {
       const nf=Math.max(6, Math.floor(cur*ratio));
       if(Math.abs(nf-cur)>=1) cols.style.fontSize=nf+'px';
     }
+    const _bw=w.querySelector('[data-bodywrap]'); if(_bw) this._scrollHint(_bw);
   }
   _correctVisibleFits(){
     const c=document.querySelector('[data-scroll]'); if(!c) return;
