@@ -207,7 +207,7 @@ class Component extends DCLogic {
     return R('div',{style:{position:'relative',width:W+'px',height:H+'px',overflow:'hidden',background:'#dfe6f0',fontFamily:"'Amaranth',sans-serif"}},
       R('img',{src:fondo,crossOrigin:'anonymous',alt:'',style:{position:'absolute',left:0,top:0,width:W+'px',height:H+'px',objectFit:'cover',zIndex:0}}),
       R('div',{style:row({top:0.050*H+'px',fontFamily:"'Playfair Display',serif",fontWeight:700,fontSize:0.118*W+'px',color:'#151515',lineHeight:1,letterSpacing:'-0.005em'})},'Cantos de hoy'),
-      R('div',{style:row({top:0.190*H+'px',left:0.07*W+'px',right:0.07*W+'px',fontStyle:'italic',fontWeight:700,fontSize:0.056*W+'px',color:'#4b4b4b',lineHeight:1.12})},name||'Celebración'),
+      R('div',{ref:(n)=>{ if(!n) return; const base=0.058*W, min=0.032*W; let cur=base; n.style.fontSize=cur+'px'; let g=0; while(g++<16){ const lines=n.scrollHeight/(cur*1.14); if(lines<=2.15 && n.scrollWidth<=n.clientWidth+1) break; cur*=0.93; if(cur<min){ cur=min; n.style.fontSize=cur+'px'; break; } n.style.fontSize=cur+'px'; } }, style:row({top:0.188*H+'px',left:0.07*W+'px',right:0.07*W+'px',fontStyle:'italic',fontWeight:700,color:'#4b4b4b',lineHeight:1.14})},name||'Celebración'),
       R('div',{style:{position:'absolute',left:boxL+'px',top:boxT+'px',width:boxW+'px',height:boxH+'px',background:'#fff',borderRadius:0.010*W+'px',boxShadow:'0 '+0.005*W+'px '+0.022*W+'px rgba(45,65,95,.20)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1}},
         qrData?R('img',{src:qrData,alt:'QR',style:{width:'87%',height:'87%',imageRendering:'pixelated'}}):R('div',{style:{color:'#aaa',fontSize:0.03*W+'px'}},'QR')
       ),
@@ -785,7 +785,7 @@ class Component extends DCLogic {
       '{end_of_chorus}'
     ].join('\n') }
   ,{ id:'tu-el-unico-rey', chordpro:[
-      '{title: Tú el Único Rey}',
+      '{title: Tú el único Rey}',
       '{section: Cantos de comunión}',
       '{artist: Tuyo}',
       '',
@@ -844,7 +844,7 @@ class Component extends DCLogic {
       '{end_of_verse}',
     ].join('\n') }
   ,{ id:'quiero-ser-tu-servidor', chordpro:[
-      '{title: Quiero Ser Tu Servidor}',
+      '{title: Quiero ser tu servidor}',
       '{section: Cantos de ofertorio}',
       '{artist: Autor por confirmar}',
       '{columns: 1}',
@@ -1256,7 +1256,7 @@ class Component extends DCLogic {
       '{end_of_verse}',
     ].join('\n') }
   ,{ id:'cara-a-cara', chordpro:[
-      '{title: Cara a Cara}',
+      '{title: Cara a cara}',
       '{section: Cantos de comunión}',
       '{artist: Marcos Vidal}',
       '{columns: 2}',
@@ -1447,7 +1447,7 @@ class Component extends DCLogic {
       '{end_of_verse}',
     ].join('\n') }
   ,{ id:'vino-y-pan', chordpro:[
-      '{title: Vino y Pan}',
+      '{title: Vino y pan}',
       '{section: Cantos de ofertorio}',
       '{artist: Autor por confirmar}',
       '{columns: 1}',
@@ -1750,7 +1750,7 @@ class Component extends DCLogic {
   ,{ id:'vaso-nuevo', chordpro:[
       '{title: Vaso nuevo}',
       '{section: Cantos de comunión}',
-      '{artist: Martín Verde Barajas}',
+      '{artist: Martín Valverde}',
       '{columns: 1}',
       '',
       '{start_of_verse}',
@@ -2309,12 +2309,12 @@ class Component extends DCLogic {
       'aleluya-taize': 'https://www.youtube.com/watch?v=6bVFneGId34&list=RD6bVFneGId34&start_radio=1',
       'vino-y-pan': 'https://drive.google.com/file/d/15gOHKEKo7yvV3v8J_lrtp0LRWC72Z5NS/view?usp=share_link',
       'tomad-y-comed': 'https://drive.google.com/file/d/1XML0H3qnkWQujDs8fAprudBI5OnSKzBu/view?usp=share_link',
-      'kyrie': 'https://drive.google.com/drive/folders/1QOJR3_BuSHmGGxY9AYAQhHL2X9r3PoVa',
+      'kyrie': 'https://drive.google.com/file/d/1b80SazBgTJbKeYcYP6ZfRyfJRna9GhEb/view?usp=share_link',
       'kyrie-ii': 'https://www.youtube.com/watch?v=GIHPsYZ9bPQ&list=RDGIHPsYZ9bPQ&start_radio=1',
       'senor-ten-piedad-tradicional': 'https://www.youtube.com/watch?v=jtFB-kh1tRc',
       'aleluya-cantara': 'https://www.youtube.com/watch?v=nWCkWvDErvc&list=RDnWCkWvDErvc&start_radio=1',
       'ya-no-eres-pan-y-vino': 'https://www.youtube.com/watch?v=W0FweLRo920&list=RDW0FweLRo920&start_radio=1',
-      'cordero-misa-santiago': 'https://drive.google.com/drive/folders/1QOJR3_BuSHmGGxY9AYAQhHL2X9r3PoVa',
+      'cordero-misa-santiago': 'https://drive.google.com/file/d/1SbbodGdzOUUmnm4QzhHlveGGhSfsAHs9/view?usp=share_link',
       'gloria-hakuna': 'https://drive.google.com/file/d/1YDED_chyxW-xT98Nc18_2Tm9_Jup1kS8/view?usp=share_link',
       'bendito-seas-por-siempre': 'https://drive.google.com/file/d/1r0iHMZoa_PYeDjZ6O7U5Z7dZbhWuGk-7/view?usp=share_link',
       'convocados': 'https://drive.google.com/file/d/1XeoSjbLriVDrngbma5gqQ7smrdp1CTBN/view?usp=share_link',
@@ -2624,7 +2624,7 @@ class Component extends DCLogic {
       R('span',{},song.section)
     );
     const ytUrl=song.youtube||this.youtubeLinks()[song.id]||'';
-    const titleRow=R('div',{style:{display:'flex',alignItems:'center',justifyContent:'center',gap:'10px',marginTop:printMode?'16px':'10px',marginBottom:printMode?'32px':'18px',flexWrap:'wrap',flex:'0 0 auto'}},
+    const titleRow=R('div',{style:{display:'flex',alignItems:'center',justifyContent:'center',gap:'10px',marginTop:printMode?'16px':'8px',marginBottom:printMode?'32px':'12px',flexWrap:'wrap',flex:'0 0 auto'}},
       R('div',{style:{fontFamily:"'Amaranth',sans-serif",fontStyle:'italic',fontWeight:700,fontSize:L.titleFs+'px',color:rojo,textAlign:'center',lineHeight:1.05}},song.title),
       (followMode||printMode)?null:this.ytIcon(song,ytUrl)
     );
@@ -2641,14 +2641,23 @@ class Component extends DCLogic {
     const grayActive={background:'#555',color:'#fff',border:'1px solid #444'};
     const tgAcc=(a)=>a===songAcc?{...btnSt,...grayActive}:{...btnSt};
     const sep=R('span',{style:{opacity:.2,margin:'0 6px'}},'|');
-    const capoRow=R('div',{style:{width:'100%',display:'flex',alignItems:'center',gap:'4px',flexWrap:'wrap',marginBottom:'1.2em',paddingBottom:'0.7em',borderBottom:'1px solid rgba(139,26,26,.2)',flex:'0 0 auto',fontSize:'0.85em',color:gris}},
+    const _perSongScale=this.state.songScales[song.id]||1;
+    const _globalScale=this.state.scale||1;
+    // Con acordes SOLO se permite agrandar con scroll en el MÓVIL. En tablet/PC (pantalla ancha)
+    // se está tocando y NO debe haber scroll → la letra ya está al máximo que cabe: "+" no agranda.
+    const _phone=(L.pageW<700);
+    const _zoom=(!hideChords && _perSongScale>1 && _phone);
+    // Feedback del botón "Texto": avisa (grisado) cuando ya no se puede agrandar/reducir más.
+    const _atMaxText=(!hideChords && !_phone) ? (_perSongScale>=1) : (_perSongScale>=2.5);
+    const _atMinText=_perSongScale<=0.5;
+    const capoRow=R('div',{style:{width:'100%',display:'flex',alignItems:'center',gap:'4px',flexWrap:'wrap',marginBottom:'0.6em',paddingBottom:'0.5em',borderBottom:'1px solid rgba(139,26,26,.2)',flex:'0 0 auto',fontSize:'0.85em',color:gris}},
       song.meta?R('span',{style:{opacity:.55,fontStyle:'italic',marginRight:'4px'}},song.meta):null,
-      R('span',{style:{opacity:.6,fontStyle:'italic',marginRight:'2px'}},'Cejilla:'),
-      R('button',{onClick:()=>setPersonalCapo(Math.max(0,personalCapo-1)),style:btnSt},'\u2212'),
-      R('span',{style:{minWidth:'44px',textAlign:'center',fontStyle:'normal',fontWeight:700,color:personalCapo===0?gris:'#333',fontSize:'0.95em'}},personalCapo===0?'—':personalCapo+'\u00BA'),
+      R('span',{style:{opacity:.6,fontStyle:'italic',marginRight:'2px'}},'Mi tono:'),
+      R('button',{onClick:()=>setPersonalCapo(Math.max(-11,personalCapo-1)),style:btnSt,title:'Bajar un semitono'},'\u2212'),
+      R('span',{style:{minWidth:'44px',textAlign:'center',fontStyle:'normal',fontWeight:700,color:personalCapo===0?gris:'#333',fontSize:'0.95em'}},personalCapo===0?'—':(personalCapo>0?'+'+personalCapo:'\u2212'+Math.abs(personalCapo))),
       R('button',{onClick:()=>setPersonalCapo(Math.min(11,personalCapo+1)),style:btnSt},'+'),
       sep,
-      R('span',{style:{opacity:.6,fontStyle:'italic',marginRight:'2px'}},'Tono:'),
+      R('span',{style:{opacity:.6,fontStyle:'italic',marginRight:'2px'}},'Transporte:'),
       R('button',{onClick:()=>setSongSetting({sem:Math.max(-11,songSem-1)}),style:{...btnSt,fontFamily:'system-ui',lineHeight:1}},'\u25bc'),
       R('span',{style:{minWidth:'22px',textAlign:'center',fontStyle:'normal',fontWeight:700,color:songSem===0?gris:'#333'}},semLabel),
       R('button',{onClick:()=>setSongSetting({sem:Math.min(11,songSem+1)}),style:{...btnSt,fontFamily:'system-ui',lineHeight:1}},'\u25b2'),
@@ -2656,8 +2665,8 @@ class Component extends DCLogic {
       R('button',{onClick:()=>setSongSetting({acc:'flat'}),style:{...tgAcc('flat'),fontFamily:'system-ui',lineHeight:1}},'\u266d'),
       R('div',{style:{flex:'1 1 auto'}}),
       R('span',{style:{opacity:.6,fontStyle:'italic',marginRight:'2px'}},'Texto:'),
-      R('button',{onClick:()=>setSongScale(-0.1),style:(this.state.songScales[song.id]||1)<1?{...bsz,background:rojo,color:'#fff',border:'none',fontWeight:700}:bsz},'\u2212'),
-      R('button',{onClick:()=>setSongScale(+0.1),style:(this.state.songScales[song.id]||1)>1?{...bsz,background:rojo,color:'#fff',border:'none',fontWeight:700}:bsz},'+')
+      R('button',{onClick:()=>{ if(!_atMinText) setSongScale(-0.1); },disabled:_atMinText,title:_atMinText?'Tama\u00f1o m\u00ednimo':'Reducir texto',style:_atMinText?{...bsz,opacity:.35,cursor:'default'}:(_perSongScale<1?{...bsz,background:rojo,color:'#fff',border:'none',fontWeight:700}:bsz)},'\u2212'),
+      R('button',{onClick:()=>{ if(!_atMaxText) setSongScale(+0.1); },disabled:_atMaxText,title:_atMaxText?'Tama\u00f1o m\u00e1ximo':'Agrandar texto',style:_atMaxText?{...bsz,opacity:.35,cursor:'default'}:(_perSongScale>1?{...bsz,background:rojo,color:'#fff',border:'none',fontWeight:700}:bsz)},'+')
     );
 
     const _blocks=song.blocks;
@@ -2674,28 +2683,38 @@ class Component extends DCLogic {
     // Solo letra / modo "seguir" en móvil: SIEMPRE 1 columna (leer letra en 2 columnas en un
     // móvil es incómodo). En pantalla ancha se respeta el reparto en columnas.
     if(hideChords && L.pageW<640) _nCols=1;
+    const _nColsAuto=_nCols;
+    // "Texto +" con acordes EN MÓVIL: al AGRANDAR (escala>1) pasamos a 1 columna y dejamos que la
+    // letra crezca (base×escala) ACEPTANDO scroll, en vez de achicarla para caber.
+    if(_zoom) _nCols=1;
     const _groups=this.splitColumns(_blocks,_nCols);
     const colEl=_nCols<=1
       ? R('div',{style:{flex:'1 1 0',minWidth:0,overflow:'visible'}},_blocks.map((b,i)=>this.renderBlock(b,'b'+i,hideChords)))
       : R(React.Fragment,null,_groups.map((g,ci)=>R('div',{key:'col'+ci,style:{flex:'1 1 0',minWidth:0,overflow:'visible'}},g.map((b,i)=>this.renderBlock(b,'c'+ci+'b'+i,hideChords)))));
-    const _perSongScale=this.state.songScales[song.id]||1;
-    const _globalScale=this.state.scale||1;
     // Tamaño de letra 100% analítico (no lee el DOM): rápido y sin reflows.
     let fittedFs=24;
     // El tamaño lo decide el ajuste automático a una página; _perSongScale/_globalScale son
     // los botones "Texto +/–" del usuario (parten de ese ajuste).
-    try{fittedFs=this.estimateFontSize(_blocks,_nCols,_perSongScale*_globalScale,_diagReserve);}catch(e){console.error('estimateFontSize error',e,song.id);}
-    // Solo letra / modo "seguir": NO comprimimos la letra para que quepa en una pantalla; se
-    // permite hacer scroll si el canto es largo. Usamos un tamaño CÓMODO relativo al ancho del
-    // dispositivo, ajustable por el usuario (Texto +/– en la app; A−/A+ en el modo seguir).
-    if(hideChords){
+    if(_zoom){
+      // AGRANDAR (móvil): base = ajuste normal (columnas automáticas, escala 1) × la escala del
+      // usuario, con tope cómodo. Al ir a 1 columna + permitir scroll, la letra crece de verdad.
+      let fsBase=16;
+      try{ fsBase=this.estimateFontSize(_blocks,_nColsAuto,_globalScale,_diagReserve); }catch(e){}
+      fittedFs=Math.round(Math.min(60, fsBase*_perSongScale));
+    } else if(hideChords){
+      // Solo letra / modo "seguir": NO comprimimos; se permite scroll. Tamaño cómodo por ancho.
       const uScale=followMode?(this.state.followScale||1):(_perSongScale*_globalScale);
       const base=Math.max(16,Math.min(23,Math.round((L.pageW||360)*0.052)));
       fittedFs=Math.round(Math.max(13,Math.min(42, base*uScale)));
+    } else {
+      // Acordes SIN zoom (tablet/PC, o móvil a escala≤1): SIN scroll → la fuente no puede superar
+      // el ajuste a página; "+" no agranda (min(escala,1)); "−" sí reduce.
+      const chScale=Math.min(_perSongScale,1)*_globalScale;
+      try{fittedFs=this.estimateFontSize(_blocks,_nCols,chScale,_diagReserve);}catch(e){console.error('estimateFontSize error',e,song.id);}
     }
     const cols=R('div',{'data-cols':'1',style:{width:'100%',flex:'0 0 auto',minHeight:0,display:'flex',flexDirection:'row',justifyContent:'space-between',gap:L.gap+'px',position:'relative',zIndex:1,overflow:'visible',fontSize:(fittedFs||24)+'px'}},colEl);
 
-    const bodyWrap=R('div',{'data-bodywrap':'1',style:{flex:'1 1 auto',minHeight:0,display:'flex',flexDirection:'column',alignItems:'stretch',overflowY:'auto',overflowX:'hidden'}},
+    const bodyWrap=R('div',{'data-bodywrap':'1',style:{flex:'1 1 auto',minHeight:0,display:'flex',flexDirection:'column',alignItems:'stretch',overflowY:'auto',overflowX:_zoom?'auto':'hidden'}},
       (followMode||printMode)?null:capoRow, _diagrams?this.renderChordDiagrams(_diagrams):null, cols
     );
 
@@ -2708,7 +2727,7 @@ class Component extends DCLogic {
     return R('section',{key:'song-'+song.id+(song.keySuffix||''),id:song.id,'data-song-id':song.id,'data-page':'1','data-songpage':'1',style:{overflow:'hidden',position:'relative',background:'#F5F0E8',display:'flex',flexDirection:'column',alignItems:'center'}},
       wm,
       footer,
-      R('div',{style:{position:'relative',zIndex:1,flex:'1 1 auto',minHeight:0,display:'flex',flexDirection:'column',width:'100%',padding:L.padY+'px '+L.padX+'px 58px'}},
+      R('div',{style:{position:'relative',zIndex:1,flex:'1 1 auto',minHeight:0,display:'flex',flexDirection:'column',width:'100%',padding:L.padY+'px '+L.padX+'px 48px'}},
 
         topbar,titleRow,bodyWrap
       )
@@ -2813,6 +2832,10 @@ class Component extends DCLogic {
       return;
     }
     const cols=w.querySelector('[data-cols]'); if(!cols) return;
+    // Si el usuario ha AGRANDADO esta canción (Texto +), NO reducir por ancho: se permite el
+    // scroll horizontal para no cortar los acordes (si no, el "+" quedaría sin efecto).
+    const _sid=(w.getAttribute&&w.getAttribute('data-song-id'))||'';
+    if((this.state.songScales[_sid]||1)>1 && !this._printMode && this._L && this._L.pageW<700) return;
     let ratio=1;
     for(const col of cols.children){ if(col.scrollWidth>col.clientWidth+1) ratio=Math.min(ratio, col.clientWidth/col.scrollWidth); }
     if(ratio<0.999){
@@ -2991,10 +3014,13 @@ class Component extends DCLogic {
     const pageH=Math.max(320,vh);
     const padX=Math.max(14,Math.min(60,Math.round(pageW*0.055)));
     const padY=Math.max(12,Math.min(40,Math.round(pageH*0.022)));
-    const titleFs=Math.round(Math.max(22,Math.min(48,pageW*0.056)));
+    // Título proporcionado: en pantallas grandes (tablet/PC) no lo dejamos gigante (antes hasta
+    // 48px con letra de 13px), así se equilibra y deja MÁS alto para la canción.
+    const titleFs=Math.round(Math.max(22,Math.min(40,pageW*0.05)));
     const gap=pageW<560?16:28;
-    // Altura ocupada por el "cromo" de la página (encabezado + título + cejilla + pie).
-    const chromeH=padY+58/*paddingBottom del pie*/+18/*topbar*/+Math.round(titleFs*1.1)+28/*título*/+54/*cejilla/tono*/+10/*margen*/;
+    // Altura ocupada por el "cromo" de la página (encabezado + título + tono + pie). Ajustada
+    // para dar más espacio a la canción sin apretujar.
+    const chromeH=padY+48/*paddingBottom del pie*/+18/*topbar*/+Math.round(titleFs*1.1)+20/*margen título*/+44/*controles tono*/+8/*margen*/;
     const availH=Math.max(140,pageH-chromeH);
     const availW=pageW-padX*2;
     this._L={vw,vh,pageW,pageH,padX,padY,titleFs,gap,availH,availW};
@@ -3065,8 +3091,7 @@ class Component extends DCLogic {
     // En "solo letra" un tope cómodo de lectura (no gigante).
     const maxFs=this._printMode?20:(this._hideChordsFit?27:44);
     // Tamaño base = el mayor que hace caber el canto ENTERO en una página (fitFs). La escala
-    // del usuario (botones Texto +/–) parte de ahí: puede AGRANDAR (aceptando algo de scroll
-    // si se pasa) o reducir. El ANCHO es tope DURO: nunca se recorta una palabra.
+    // del usuario (botones Texto +/–) parte de ahí: puede AGRANDAR o reducir.
     const fitFs=Math.min(fontH,fontW);
     let fs=fitFs*sc;
     fs=Math.min(fs, fontW, maxFs);
