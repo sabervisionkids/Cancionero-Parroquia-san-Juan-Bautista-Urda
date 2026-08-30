@@ -2619,7 +2619,7 @@ class Component extends DCLogic {
       });
     };
     const bsz={background:'rgba(0,0,0,.06)',border:'1px solid rgba(0,0,0,.12)',color:'#555',borderRadius:'3px',padding:'1px 6px',cursor:'pointer',fontSize:'11px',lineHeight:1.4,fontFamily:"'EB Garamond',serif",fontStyle:'normal'};
-    const topbar=R('div',{style:{display:'flex',justifyContent:followMode?'center':(printMode?'flex-end':'space-between'),alignItems:'center',fontSize:'12px',fontStyle:'italic',textTransform:'uppercase',letterSpacing:'.5px',color:gris,flex:'0 0 auto'}},
+    const topbar=R('div',{style:{display:'flex',justifyContent:followMode?'center':(printMode?'flex-end':'space-between'),alignItems:'center',fontSize:Math.max(10,Math.round(L.titleFs*0.3))+'px',fontStyle:'italic',textTransform:'uppercase',letterSpacing:'.4px',opacity:.9,color:gris,flex:'0 0 auto'}},
       (followMode||printMode)?null:R('a',{onClick:(e)=>{e.preventDefault();this.goTo('indice');},style:{color:gris,textDecoration:'underline',cursor:'pointer'}},'\u00CDndice'),
       R('span',{},song.section)
     );
@@ -2650,23 +2650,33 @@ class Component extends DCLogic {
     // Feedback del botón "Texto": avisa (grisado) cuando ya no se puede agrandar/reducir más.
     const _atMaxText=(!hideChords && !_phone) ? (_perSongScale>=1) : (_perSongScale>=2.5);
     const _atMinText=_perSongScale<=0.5;
-    const capoRow=R('div',{style:{width:'100%',display:'flex',alignItems:'center',gap:'4px',flexWrap:'wrap',marginBottom:'0.6em',paddingBottom:'0.5em',borderBottom:'1px solid rgba(139,26,26,.2)',flex:'0 0 auto',fontSize:'0.85em',color:gris}},
-      song.meta?R('span',{style:{opacity:.55,fontStyle:'italic',marginRight:'4px'}},song.meta):null,
-      R('span',{style:{opacity:.6,fontStyle:'italic',marginRight:'2px'}},'Mi tono:'),
-      R('button',{onClick:()=>setPersonalCapo(Math.max(-11,personalCapo-1)),style:btnSt,title:'Bajar un semitono'},'\u2212'),
-      R('span',{style:{minWidth:'44px',textAlign:'center',fontStyle:'normal',fontWeight:700,color:personalCapo===0?gris:'#333',fontSize:'0.95em'}},personalCapo===0?'—':(personalCapo>0?'+'+personalCapo:'\u2212'+Math.abs(personalCapo))),
-      R('button',{onClick:()=>setPersonalCapo(Math.min(11,personalCapo+1)),style:btnSt},'+'),
-      sep,
-      R('span',{style:{opacity:.6,fontStyle:'italic',marginRight:'2px'}},'Transporte:'),
-      R('button',{onClick:()=>setSongSetting({sem:Math.max(-11,songSem-1)}),style:{...btnSt,fontFamily:'system-ui',lineHeight:1}},'\u25bc'),
-      R('span',{style:{minWidth:'22px',textAlign:'center',fontStyle:'normal',fontWeight:700,color:songSem===0?gris:'#333'}},semLabel),
-      R('button',{onClick:()=>setSongSetting({sem:Math.min(11,songSem+1)}),style:{...btnSt,fontFamily:'system-ui',lineHeight:1}},'\u25b2'),
-      R('button',{onClick:()=>setSongSetting({acc:'sharp'}),style:{...tgAcc('sharp'),marginLeft:'4px',fontFamily:'system-ui',lineHeight:1}},'\u266f'),
-      R('button',{onClick:()=>setSongSetting({acc:'flat'}),style:{...tgAcc('flat'),fontFamily:'system-ui',lineHeight:1}},'\u266d'),
-      R('div',{style:{flex:'1 1 auto'}}),
-      R('span',{style:{opacity:.6,fontStyle:'italic',marginRight:'2px'}},'Texto:'),
-      R('button',{onClick:()=>{ if(!_atMinText) setSongScale(-0.1); },disabled:_atMinText,title:_atMinText?'Tama\u00f1o m\u00ednimo':'Reducir texto',style:_atMinText?{...bsz,opacity:.35,cursor:'default'}:(_perSongScale<1?{...bsz,background:rojo,color:'#fff',border:'none',fontWeight:700}:bsz)},'\u2212'),
-      R('button',{onClick:()=>{ if(!_atMaxText) setSongScale(+0.1); },disabled:_atMaxText,title:_atMaxText?'Tama\u00f1o m\u00e1ximo':'Agrandar texto',style:_atMaxText?{...bsz,opacity:.35,cursor:'default'}:(_perSongScale>1?{...bsz,background:rojo,color:'#fff',border:'none',fontWeight:700}:bsz)},'+')
+    // Cada control (Mi tono / Transporte / Texto) va en su propio grupo "que no se parte"
+    // (whiteSpace:nowrap): así el # y ♭ nunca se separan de Transporte y, al estrecharse en
+    // móvil, la fila se parte limpia ENTRE grupos, no dentro.
+    const _grp=(kids)=>R('span',{style:{display:'inline-flex',alignItems:'center',gap:'3px',whiteSpace:'nowrap',flex:'0 0 auto'}},kids);
+    const _lbl=(t)=>R('span',{style:{opacity:.6,fontStyle:'italic'}},t);
+    const capoRow=R('div',{style:{width:'100%',display:'flex',alignItems:'center',columnGap:'12px',rowGap:'6px',flexWrap:'wrap',marginBottom:'0.6em',paddingBottom:'0.5em',borderBottom:'1px solid rgba(139,26,26,.2)',flex:'0 0 auto',fontSize:'0.82em',color:gris}},
+      song.meta?R('span',{key:'meta',style:{opacity:.55,fontStyle:'italic',flex:'0 0 auto'}},song.meta):null,
+      _grp([
+        _lbl('Mi tono:'),
+        R('button',{key:'a',onClick:()=>setPersonalCapo(Math.max(-11,personalCapo-1)),style:btnSt,title:'Bajar un semitono'},'−'),
+        R('span',{key:'b',style:{minWidth:'28px',textAlign:'center',fontStyle:'normal',fontWeight:700,color:personalCapo===0?gris:'#333',fontSize:'0.95em'}},personalCapo===0?'—':(personalCapo>0?'+'+personalCapo:'−'+Math.abs(personalCapo))),
+        R('button',{key:'c',onClick:()=>setPersonalCapo(Math.min(11,personalCapo+1)),style:btnSt,title:'Subir un semitono'},'+')
+      ]),
+      _grp([
+        _lbl('Transporte:'),
+        R('button',{key:'a',onClick:()=>setSongSetting({sem:Math.max(-11,songSem-1)}),style:{...btnSt,fontFamily:'system-ui',lineHeight:1}},'▼'),
+        R('span',{key:'b',style:{minWidth:'20px',textAlign:'center',fontStyle:'normal',fontWeight:700,color:songSem===0?gris:'#333'}},semLabel),
+        R('button',{key:'c',onClick:()=>setSongSetting({sem:Math.min(11,songSem+1)}),style:{...btnSt,fontFamily:'system-ui',lineHeight:1}},'▲'),
+        R('button',{key:'d',onClick:()=>setSongSetting({acc:'sharp'}),style:{...tgAcc('sharp'),marginLeft:'2px',fontFamily:'system-ui',lineHeight:1}},'♯'),
+        R('button',{key:'e',onClick:()=>setSongSetting({acc:'flat'}),style:{...tgAcc('flat'),fontFamily:'system-ui',lineHeight:1}},'♭')
+      ]),
+      R('div',{key:'sp',style:{flex:'1 1 auto',minWidth:'6px'}}),
+      _grp([
+        _lbl('Texto:'),
+        R('button',{key:'a',onClick:()=>{ if(!_atMinText) setSongScale(-0.1); },disabled:_atMinText,title:_atMinText?'Tamaño mínimo':'Reducir texto',style:_atMinText?{...bsz,opacity:.35,cursor:'default'}:(_perSongScale<1?{...bsz,background:rojo,color:'#fff',border:'none',fontWeight:700}:bsz)},'−'),
+        R('button',{key:'b',onClick:()=>{ if(!_atMaxText) setSongScale(+0.1); },disabled:_atMaxText,title:_atMaxText?'Tamaño máximo':'Agrandar texto',style:_atMaxText?{...bsz,opacity:.35,cursor:'default'}:(_perSongScale>1?{...bsz,background:rojo,color:'#fff',border:'none',fontWeight:700}:bsz)},'+')
+      ])
     );
 
     const _blocks=song.blocks;
@@ -3016,7 +3026,7 @@ class Component extends DCLogic {
     const padY=Math.max(12,Math.min(40,Math.round(pageH*0.022)));
     // Título proporcionado: en pantallas grandes (tablet/PC) no lo dejamos gigante (antes hasta
     // 48px con letra de 13px), así se equilibra y deja MÁS alto para la canción.
-    const titleFs=Math.round(Math.max(22,Math.min(40,pageW*0.05)));
+    const titleFs=Math.round(Math.max(24,Math.min(40,pageW*0.052)));
     const gap=pageW<560?16:28;
     // Altura ocupada por el "cromo" de la página (encabezado + título + tono + pie). Ajustada
     // para dar más espacio a la canción sin apretujar.
